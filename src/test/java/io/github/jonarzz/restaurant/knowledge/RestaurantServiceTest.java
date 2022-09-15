@@ -17,6 +17,7 @@ import org.springframework.test.context.*;
 import org.testcontainers.containers.*;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.*;
+import software.amazon.awssdk.auth.credentials.*;
 import software.amazon.awssdk.services.dynamodb.*;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
@@ -50,11 +51,12 @@ class RestaurantServiceTest {
 
         @Bean
         @Primary
-        DynamoDbClient amazonDynamoDB() {
+        DynamoDbClient amazonDynamoDB(AwsCredentialsProvider awsCredentialsProvider) {
             dynamoDbContainer.start();
             return DynamoDbClient.builder()
                                  .endpointOverride(URI.create("http://localhost:" + dynamoDbContainer.getFirstMappedPort()))
                                  .region(EU_CENTRAL_1)
+                                 .credentialsProvider(awsCredentialsProvider)
                                  .build();
         }
     }
