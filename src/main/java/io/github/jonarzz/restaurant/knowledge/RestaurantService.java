@@ -3,6 +3,7 @@ package io.github.jonarzz.restaurant.knowledge;
 import static java.util.function.Function.*;
 import static java.util.stream.Collectors.*;
 
+import org.springframework.security.core.context.*;
 import org.springframework.stereotype.*;
 import software.amazon.awssdk.services.dynamodb.*;
 import software.amazon.awssdk.services.dynamodb.model.*;
@@ -13,22 +14,124 @@ import java.util.function.*;
 import io.github.jonarzz.restaurant.knowledge.model.*;
 
 @Repository
-class RestaurantTableDao {
+class RestaurantService {
 
     private DynamoDbClient client;
 
-    RestaurantTableDao(DynamoDbClient client) {
+    RestaurantService(DynamoDbClient client) {
         this.client = client;
     }
 
-    void save(RestaurantTable restaurant) {
+    FetchResult fetch(String restaurantName) {
+        var userId = SecurityContextHolder.getContext()
+                                          .getAuthentication()
+                                          .getName();
+        return findByUserIdAndRestaurantName(userId, restaurantName)
+                .<FetchResult>map(FetchResult.Found::new)
+                .orElseGet(FetchResult.NotFound::new);
+    }
+
+    void save(RestaurantRow restaurant) {
         client.putItem(PutItemRequest.builder()
                                      .tableName("Restaurant")
                                      .item(toItem(restaurant))
                                      .build());
     }
 
-    private static Map<String, AttributeValue> toItem(RestaurantTable restaurant) {
+    Optional<RestaurantRow> findByUserIdAndRestaurantName(String userId, String restaurantName) {
+        var request = GetItemRequest.builder()
+                                    .tableName("Restaurant")
+                                    .key(createKey(userId, restaurantName))
+                                    .build();
+        var response = client.getItem(request);
+        if (!response.hasItem()) {
+            return Optional.empty();
+        }
+        var extractor = new ItemExtractor(response.item());
+        return Optional.of(RestaurantRow.builder()
+                                        .userId(extractor.string("userId"))
+                                        .restaurantName(extractor.string("restaurantName"))
+                                        .categories(extractor.set("categories", Category::valueOf))
+                                        .triedBefore(extractor.bool("triedBefore"))
+                                        .rating(extractor.integer("rating"))
+                                        .review(extractor.string("review"))
+                                        .notes(extractor.list("notes"))
+                                        .build());
+    }
+
+    void rename(RestaurantRow restaurant, String newName) {
+        // TODO add copy with new name + delete old
+    }
+
+    void delete(RestaurantRow restaurant) {
+    }
+
+    void setRating(RestaurantRow restaurant, Integer rating) {
+        // TODO
+        if (rating == null) {
+
+        } else {
+
+        }
+    }
+
+    void setReview(RestaurantRow restaurant, String review) {
+        // TODO
+        if (review == null) {
+
+        } else {
+
+        }
+    }
+
+    void setVisited(RestaurantRow restaurant, boolean visited) {
+        // TODO (remove rating, review and notes when not visited)
+        if (visited) {
+
+        } else {
+
+        }
+    }
+
+    void replaceCategories(RestaurantRow restaurant, Set<Category> categories) {
+        var attributes = new AttributesCreator()
+                .putIfNotEmpty("category", categories, Category::getValue);
+        var request = UpdateItemRequest.builder()
+                                       .tableName("Restaurant")
+                                       .key(createKey(restaurant))
+                                       .attributeUpdates(Map.of(
+                                               "categories",
+                                               // TODO single attribute building -> use in AttributeCreator
+                                               AttributeValueUpdate.builder()
+                                                                   .value(attributes.attributes.get("category"))
+                                                                   .build()
+                                       ))
+                                       .build();
+        client.updateItem(request);
+    }
+
+    void replaceNotes(RestaurantRow restaurant, List<String> notes) {
+
+    }
+
+    // TODO vvv extract (DAO layer?) vvv
+
+    private static Map<String, AttributeValue> createKey(RestaurantRow restaurant) {
+        return createKey(restaurant.userId(), restaurant.restaurantName());
+    }
+
+    private static Map<String, AttributeValue> createKey(String userId, String restaurantName) {
+        return Map.of(
+                "userId", AttributeValue.builder()
+                                        .s(userId)
+                                        .build(),
+                "restaurantName", AttributeValue.builder()
+                                                .s(restaurantName)
+                                                .build()
+        );
+    }
+
+    private static Map<String, AttributeValue> toItem(RestaurantRow restaurant) {
         return new AttributesCreator()
                 .putIfPresent("userId",         restaurant.userId(),         AttributeValue.Builder::s)
                 .putIfPresent("restaurantName", restaurant.restaurantName(), AttributeValue.Builder::s)
@@ -36,36 +139,8 @@ class RestaurantTableDao {
                 .putIfPresent("review",         restaurant.review(),         AttributeValue.Builder::s)
                 .putIfPresent("rating",         restaurant.ratingString(),   AttributeValue.Builder::n)
                 .putIfNotEmpty("notes",      restaurant.notes())
-                .putIfNotEmpty("categories", restaurant.categories(), Category::toString)
+                .putIfNotEmpty("categories", restaurant.categories(), Category::getValue)
                 .create();
-    }
-
-    Optional<RestaurantTable> findByUserIdAndRestaurantName(String userId, String restaurantName) {
-        var request = GetItemRequest.builder()
-                                    .tableName("Restaurant")
-                                    .key(Map.of(
-                                            "userId", AttributeValue.builder()
-                                                                    .s(userId)
-                                                                    .build(),
-                                            "restaurantName", AttributeValue.builder()
-                                                                            .s(restaurantName)
-                                                                            .build()
-                                    ))
-                                    .build();
-        var response = client.getItem(request);
-        if (!response.hasItem()) {
-            return Optional.empty();
-        }
-        var extractor = new ItemExtractor(response.item());
-        return Optional.of(RestaurantTable.builder()
-                                          .userId(extractor.string("userId"))
-                                          .restaurantName(extractor.string("restaurantName"))
-                                          .categories(extractor.set("categories", Category::valueOf))
-                                          .triedBefore(extractor.bool("triedBefore"))
-                                          .rating(extractor.integer("rating"))
-                                          .review(extractor.string("review"))
-                                          .notes(extractor.list("notes"))
-                                          .build());
     }
 
     static class AttributesCreator {

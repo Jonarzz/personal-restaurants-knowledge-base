@@ -13,7 +13,7 @@ import io.github.jonarzz.restaurant.knowledge.model.*;
 @Setter(NONE)
 @Builder
 @Accessors(fluent = true)
-class RestaurantTable {
+class RestaurantRow {
 
     private String userId;
     private String restaurantName;
@@ -25,11 +25,20 @@ class RestaurantTable {
     @Singular
     private List<String> notes;
 
+    static RestaurantRow from(RestaurantData restaurant) {
+        return RestaurantRow.builder()
+                            .build();
+    }
+
     String ratingString() {
         return Optional.ofNullable(rating)
                        .map(String::valueOf)
                        .orElse(null);
     }
 
+    RestaurantData data() {
+        // TODO
+        return new RestaurantData();
+    }
 }
 

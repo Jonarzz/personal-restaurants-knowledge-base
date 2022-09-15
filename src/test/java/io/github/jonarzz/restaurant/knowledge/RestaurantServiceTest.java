@@ -26,7 +26,7 @@ import java.util.*;
 @Testcontainers
 @SpringBootTest(
         webEnvironment = NONE,
-        classes = RestaurantTableDaoTest.Configuration.class
+        classes = RestaurantServiceTest.Configuration.class
 )
 @TestPropertySource(properties = {
         "amazon.aws.accesskey = dummy-access",
@@ -34,7 +34,7 @@ import java.util.*;
 })
 @TestInstance(PER_CLASS)
 @TestMethodOrder(OrderAnnotation.class)
-class RestaurantTableDaoTest {
+class RestaurantServiceTest {
 
     static final String TEST_USER = "test-user";
     static final String TRIED_RESTAURANT_NAME = "Subway";
@@ -62,7 +62,7 @@ class RestaurantTableDaoTest {
     @Autowired
     DynamoDbClient amazonDynamoDb;
     @Autowired
-    RestaurantTableDao restaurantTableDao;
+    RestaurantService restaurantService;
 
     @BeforeAll
     void beforeAll() {
@@ -72,7 +72,7 @@ class RestaurantTableDaoTest {
     @Test
     @Order(10)
     void findByUserIdAndName_emptyTable() {
-        var result = restaurantTableDao.findByUserIdAndRestaurantName(TEST_USER, NOT_TRIED_RESTAURANT_NAME);
+        var result = restaurantService.findByUserIdAndRestaurantName(TEST_USER, NOT_TRIED_RESTAURANT_NAME);
 
         assertThat(result)
                 .isEmpty();
@@ -81,69 +81,69 @@ class RestaurantTableDaoTest {
     @Test
     @Order(20)
     void createFirstRestaurantEntry() {
-        var toSave = RestaurantTable.builder()
-                                    .userId(TEST_USER)
-                                    .restaurantName(NOT_TRIED_RESTAURANT_NAME)
-                                    .category(FAST_FOOD)
-                                    .category(BURGER)
-                                    .build();
+        var toSave = RestaurantRow.builder()
+                                  .userId(TEST_USER)
+                                  .restaurantName(NOT_TRIED_RESTAURANT_NAME)
+                                  .category(FAST_FOOD)
+                                  .category(BURGER)
+                                  .build();
 
         assertThatNoException()
-                .isThrownBy(() -> restaurantTableDao.save(toSave));
+                .isThrownBy(() -> restaurantService.save(toSave));
     }
 
     @Test
     @Order(20)
     void createSecondRestaurantEntry() {
-        var toSave = RestaurantTable.builder()
-                                    .userId(TEST_USER)
-                                    .restaurantName(TRIED_RESTAURANT_NAME)
-                                    .category(FAST_FOOD)
-                                    .category(SANDWICH)
-                                    .triedBefore(true)
-                                    .rating(6)
-                                    .review("Good enough")
-                                    .note("Tuna should be ordered cold")
-                                    .note("Don't go too heavy on the veggies")
-                                    .build();
+        var toSave = RestaurantRow.builder()
+                                  .userId(TEST_USER)
+                                  .restaurantName(TRIED_RESTAURANT_NAME)
+                                  .category(FAST_FOOD)
+                                  .category(SANDWICH)
+                                  .triedBefore(true)
+                                  .rating(6)
+                                  .review("Good enough")
+                                  .note("Tuna should be ordered cold")
+                                  .note("Don't go too heavy on the veggies")
+                                  .build();
 
         assertThatNoException()
-                .isThrownBy(() -> restaurantTableDao.save(toSave));
+                .isThrownBy(() -> restaurantService.save(toSave));
     }
 
     @Test
     @Order(30)
     void findNotTriedByUserIdAndName_afterAddingTwo() {
-        var result = restaurantTableDao.findByUserIdAndRestaurantName(TEST_USER, NOT_TRIED_RESTAURANT_NAME);
+        var result = restaurantService.findByUserIdAndRestaurantName(TEST_USER, NOT_TRIED_RESTAURANT_NAME);
 
         assertThat(result)
                 .get()
-                .returns(TEST_USER, RestaurantTable::userId)
-                .returns(NOT_TRIED_RESTAURANT_NAME, RestaurantTable::restaurantName)
-                .returns(Set.of(FAST_FOOD, BURGER), RestaurantTable::categories)
-                .returns(false, RestaurantTable::triedBefore)
-                .returns(null, RestaurantTable::rating)
-                .returns(null, RestaurantTable::review)
-                .returns(List.of(), RestaurantTable::notes);
+                .returns(TEST_USER, RestaurantRow::userId)
+                .returns(NOT_TRIED_RESTAURANT_NAME, RestaurantRow::restaurantName)
+                .returns(Set.of(FAST_FOOD, BURGER), RestaurantRow::categories)
+                .returns(false, RestaurantRow::triedBefore)
+                .returns(null, RestaurantRow::rating)
+                .returns(null, RestaurantRow::review)
+                .returns(List.of(), RestaurantRow::notes);
     }
 
     @Test
     @Order(30)
     void findTriedByUserIdAndName_afterAddingTwo() {
-        var result = restaurantTableDao.findByUserIdAndRestaurantName(TEST_USER, TRIED_RESTAURANT_NAME);
+        var result = restaurantService.findByUserIdAndRestaurantName(TEST_USER, TRIED_RESTAURANT_NAME);
 
         assertThat(result)
                 .get()
-                .returns(TEST_USER, RestaurantTable::userId)
-                .returns(TRIED_RESTAURANT_NAME, RestaurantTable::restaurantName)
-                .returns(Set.of(FAST_FOOD, SANDWICH), RestaurantTable::categories)
-                .returns(true, RestaurantTable::triedBefore)
-                .returns(6, RestaurantTable::rating)
-                .returns("Good enough", RestaurantTable::review)
+                .returns(TEST_USER, RestaurantRow::userId)
+                .returns(TRIED_RESTAURANT_NAME, RestaurantRow::restaurantName)
+                .returns(Set.of(FAST_FOOD, SANDWICH), RestaurantRow::categories)
+                .returns(true, RestaurantRow::triedBefore)
+                .returns(6, RestaurantRow::rating)
+                .returns("Good enough", RestaurantRow::review)
                 .returns(List.of(
                         "Tuna should be ordered cold",
                         "Don't go too heavy on the veggies"
-                ), RestaurantTable::notes);
+                ), RestaurantRow::notes);
     }
 
     private static CreateTableRequest prepareCreateTableRequest() {
