@@ -1,5 +1,6 @@
 package io.github.jonarzz.restaurant.knowledge;
 
+import static io.github.jonarzz.restaurant.knowledge.RestaurantService.AttributesCreator.*;
 import static java.util.function.Function.*;
 import static java.util.stream.Collectors.*;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeAction.*;
@@ -60,89 +61,39 @@ class RestaurantService {
     }
 
     void setRating(RestaurantRow restaurant, Integer rating) {
-        var request = UpdateItemRequest.builder()
-                                       .tableName(TABLE_NAME)
-                                       .key(createKey(restaurant))
-                                       .attributeUpdates(Map.of(
-                                               "rating", AttributeValueUpdate.builder()
-                                                                             .value(Optional.ofNullable(rating)
-                                                                                            .map(String::valueOf)
-                                                                                            .map(AttributeValue::fromN)
-                                                                                            .orElse(null))
-                                                                             .build(),
-                                               "triedBefore", AttributeValueUpdate.builder()
-                                                                                  .value(fromBool(true))
-                                                                                  .build()
-                                       ))
-                                       .build();
-        client.updateItem(request);
+        performUpdate(restaurant, Map.of(
+                "rating", asNumberUpdateAttribute(rating),
+                "triedBefore", asUpdateAttribute(fromBool(true))
+        ));
     }
 
     void setReview(RestaurantRow restaurant, String review) {
-        var request = UpdateItemRequest.builder()
-                                       .tableName(TABLE_NAME)
-                                       .key(createKey(restaurant))
-                                       .attributeUpdates(Map.of(
-                                               "review", AttributeValueUpdate.builder()
-                                                                             .value(fromS(review))
-                                                                             .build(),
-                                               "triedBefore", AttributeValueUpdate.builder()
-                                                                                  .value(fromBool(true))
-                                                                                  .build()
-                                       ))
-                                       .build();
-        client.updateItem(request);
+        performUpdate(restaurant, Map.of(
+                "review", asUpdateAttribute(fromS(review)),
+                "triedBefore", asUpdateAttribute(fromBool(true))
+        ));
     }
 
     void setTriedBefore(RestaurantRow restaurant, boolean tried) {
         Map<String, AttributeValueUpdate> updates = new HashMap<>();
-        updates.put("triedBefore", AttributeValueUpdate.builder()
-                                                       .value(fromBool(tried))
-                                                       .build());
+        updates.put("triedBefore", asUpdateAttribute(fromBool(tried)));
         if (!tried) {
             updates.put("rating", DELETE_UPDATE);
             updates.put("review", DELETE_UPDATE);
         }
-        var request = UpdateItemRequest.builder()
-                                       .tableName(TABLE_NAME)
-                                       .key(createKey(restaurant))
-                                       .attributeUpdates(updates)
-                                       .build();
-        client.updateItem(request);
+        performUpdate(restaurant, updates);
     }
 
     void replaceCategories(RestaurantRow restaurant, Set<Category> categories) {
-        var attributes = new AttributesCreator()
-                .putIfNotEmpty("category", categories, Category::getValue);
-        var request = UpdateItemRequest.builder()
-                                       .tableName(TABLE_NAME)
-                                       .key(createKey(restaurant))
-                                       .attributeUpdates(Map.of(
-                                               "categories",
-                                               // TODO single attribute building -> use in AttributeCreator
-                                               AttributeValueUpdate.builder()
-                                                                   .value(attributes.attributes.get("category"))
-                                                                   .build()
-                                       ))
-                                       .build();
-        client.updateItem(request);
+        performUpdate(restaurant, Map.of(
+                "categories", asUpdateAttribute(setAttribute(categories, Category::getValue))
+        ));
     }
 
     void replaceNotes(RestaurantRow restaurant, List<String> notes) {
-        var attributes = new AttributesCreator()
-                .putIfNotEmpty("notes", notes);
-        var request = UpdateItemRequest.builder()
-                                       .tableName(TABLE_NAME)
-                                       .key(createKey(restaurant))
-                                       .attributeUpdates(Map.of(
-                                               "notes",
-                                               // TODO single attribute building -> use in AttributeCreator
-                                               AttributeValueUpdate.builder()
-                                                                   .value(attributes.attributes.get("notes"))
-                                                                   .build()
-                                       ))
-                                       .build();
-        client.updateItem(request);
+        performUpdate(restaurant, Map.of(
+                "notes", asUpdateAttribute(listAttribute(notes))
+        ));
     }
 
     private Optional<RestaurantRow> findByUserIdAndRestaurantName(String userId, String restaurantName) {
@@ -166,6 +117,15 @@ class RestaurantService {
                                         .build());
     }
 
+    private void performUpdate(RestaurantRow restaurant, Map<String, AttributeValueUpdate> updates) {
+        var request = UpdateItemRequest.builder()
+                                       .tableName(TABLE_NAME)
+                                       .key(createKey(restaurant))
+                                       .attributeUpdates(updates)
+                                       .build();
+        client.updateItem(request);
+    }
+
     // TODO vvv extract (DAO layer?) vvv
 
     private static Map<String, AttributeValue> createKey(RestaurantRow restaurant) {
@@ -174,12 +134,8 @@ class RestaurantService {
 
     private static Map<String, AttributeValue> createKey(String userId, String restaurantName) {
         return Map.of(
-                "userId", AttributeValue.builder()
-                                        .s(userId)
-                                        .build(),
-                "restaurantName", AttributeValue.builder()
-                                                .s(restaurantName)
-                                                .build()
+                "userId", fromS(userId),
+                "restaurantName", fromS(restaurantName)
         );
     }
 
@@ -199,35 +155,54 @@ class RestaurantService {
 
         private Map<String, AttributeValue> attributes = new HashMap<>();
 
+        static AttributeValue listAttribute(List<String> values) {
+            return fromL(values.stream()
+                               .map(AttributeValue::fromS)
+                               .toList());
+        }
+
+        static <S> AttributeValue setAttribute(Set<S> values, Function<S, String> mapper) {
+            return AttributeValue.builder()
+                                 .ss(values.stream()
+                                           .map(mapper)
+                                           .collect(toSet()))
+                                 .build();
+        }
+
+        static AttributeValueUpdate asUpdateAttribute(AttributeValue attributeValue) {
+            return AttributeValueUpdate.builder()
+                                       .value(attributeValue)
+                                       .build();
+        }
+
+        static AttributeValueUpdate asNumberUpdateAttribute(Integer value) {
+            return AttributeValueUpdate.builder()
+                                       .value(Optional.ofNullable(value)
+                                                      .map(String::valueOf)
+                                                      .map(AttributeValue::fromN)
+                                                      .orElse(null))
+                                       .build();
+        }
+
         <T> AttributesCreator putIfPresent(String attributeName, T nullable,
                                            Function<T, AttributeValue> attributeCreator) {
-            if (nullable == null) {
-                return this;
-            }
-            attributes.put(attributeName, attributeCreator.apply(nullable));
+            Optional.ofNullable(nullable)
+                    .map(attributeCreator)
+                    .ifPresent(attribute -> attributes.put(attributeName, attribute));
             return this;
         }
 
         AttributesCreator putIfNotEmpty(String attributeName, List<String> values) {
-            if (values.isEmpty()) {
-                return this;
+            if (!values.isEmpty()) {
+                attributes.put(attributeName, listAttribute(values));
             }
-            attributes.put(attributeName, fromL(values.stream()
-                                                      .map(AttributeValue::fromS)
-                                                      .toList()));
             return this;
         }
 
         <S> AttributesCreator putIfNotEmpty(String attributeName, Set<S> values, Function<S, String> mapper) {
-            if (values.isEmpty()) {
-                return this;
+            if (!values.isEmpty()) {
+                attributes.put(attributeName, setAttribute(values, mapper));
             }
-            var mapped = values.stream()
-                               .map(mapper)
-                               .collect(toSet());
-            attributes.put(attributeName, AttributeValue.builder()
-                                                        .ss(mapped)
-                                                        .build());
             return this;
         }
 
