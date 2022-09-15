@@ -7,3 +7,5 @@ out/
 !**/src/test/**/out/
 
 **/target/
+
+secrets.yaml

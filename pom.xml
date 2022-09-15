@@ -18,12 +18,17 @@
     <properties>
         <java.version>17</java.version>
         <spring-cloud.version>2021.0.4</spring-cloud.version>
+        <testcontainers.version>1.17.3</testcontainers.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -35,9 +40,8 @@
             <version>3.0.0</version>
         </dependency>
         <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-prometheus</artifactId>
-            <scope>runtime</scope>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>dynamodb</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -54,6 +58,18 @@
             <artifactId>spring-cloud-starter-contract-verifier</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>
@@ -62,6 +78,13 @@
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
                 <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>2.17.274</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -82,11 +105,13 @@
                         <configuration>
                             <inputSpec>${project.basedir}/src/main/resources/api/openapi.yaml</inputSpec>
                             <generatorName>spring</generatorName>
-                            <apiPackage>${project.groupId}.restaurant.knowledge.api</apiPackage>
-                            <modelPackage>${project.groupId}.restaurant.knowledge.model</modelPackage>
+                            <library>spring-boot</library>
                             <configOptions>
                                 <basePackage>${project.groupId}.restaurant.knowledge</basePackage>
-                                <delegatePattern>true</delegatePattern>
+                                <apiPackage>${project.groupId}.restaurant.knowledge.api</apiPackage>
+                                <modelPackage>${project.groupId}.restaurant.knowledge.model</modelPackage>
+                                <interfaceOnly>true</interfaceOnly>
+                                <skipDefaultInterface>true</skipDefaultInterface>
                                 <performBeanValidation>true</performBeanValidation>
                                 <openApiNullable>false</openApiNullable>
                             </configOptions>
