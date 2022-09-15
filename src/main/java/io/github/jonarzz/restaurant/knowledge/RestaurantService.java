@@ -2,6 +2,8 @@ package io.github.jonarzz.restaurant.knowledge;
 
 import static java.util.function.Function.*;
 import static java.util.stream.Collectors.*;
+import static software.amazon.awssdk.services.dynamodb.model.AttributeAction.*;
+import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.*;
 
 import org.springframework.security.core.context.*;
 import org.springframework.stereotype.*;
@@ -15,6 +17,12 @@ import io.github.jonarzz.restaurant.knowledge.model.*;
 
 @Repository
 class RestaurantService {
+
+    private static final String TABLE_NAME = "Restaurant";
+
+    private static final AttributeValueUpdate DELETE_UPDATE = AttributeValueUpdate.builder()
+                                                                                  .action(DELETE)
+                                                                                  .build();
 
     private DynamoDbClient client;
 
@@ -31,16 +39,115 @@ class RestaurantService {
                 .orElseGet(FetchResult.NotFound::new);
     }
 
-    void save(RestaurantRow restaurant) {
+    void create(RestaurantRow restaurant) {
         client.putItem(PutItemRequest.builder()
-                                     .tableName("Restaurant")
+                                     .tableName(TABLE_NAME)
                                      .item(toItem(restaurant))
                                      .build());
     }
 
-    Optional<RestaurantRow> findByUserIdAndRestaurantName(String userId, String restaurantName) {
+    void rename(RestaurantRow restaurant, String newName) {
+        create(restaurant.renamedTo(newName));
+        delete(restaurant);
+    }
+
+    void delete(RestaurantRow restaurant) {
+        var request = DeleteItemRequest.builder()
+                                       .tableName(TABLE_NAME)
+                                       .key(createKey(restaurant))
+                                       .build();
+        client.deleteItem(request);
+    }
+
+    void setRating(RestaurantRow restaurant, Integer rating) {
+        var request = UpdateItemRequest.builder()
+                                       .tableName(TABLE_NAME)
+                                       .key(createKey(restaurant))
+                                       .attributeUpdates(Map.of(
+                                               "rating", AttributeValueUpdate.builder()
+                                                                             .value(Optional.ofNullable(rating)
+                                                                                            .map(String::valueOf)
+                                                                                            .map(AttributeValue::fromN)
+                                                                                            .orElse(null))
+                                                                             .build(),
+                                               "triedBefore", AttributeValueUpdate.builder()
+                                                                                  .value(fromBool(true))
+                                                                                  .build()
+                                       ))
+                                       .build();
+        client.updateItem(request);
+    }
+
+    void setReview(RestaurantRow restaurant, String review) {
+        var request = UpdateItemRequest.builder()
+                                       .tableName(TABLE_NAME)
+                                       .key(createKey(restaurant))
+                                       .attributeUpdates(Map.of(
+                                               "review", AttributeValueUpdate.builder()
+                                                                             .value(fromS(review))
+                                                                             .build(),
+                                               "triedBefore", AttributeValueUpdate.builder()
+                                                                                  .value(fromBool(true))
+                                                                                  .build()
+                                       ))
+                                       .build();
+        client.updateItem(request);
+    }
+
+    void setTriedBefore(RestaurantRow restaurant, boolean tried) {
+        Map<String, AttributeValueUpdate> updates = new HashMap<>();
+        updates.put("triedBefore", AttributeValueUpdate.builder()
+                                                       .value(fromBool(tried))
+                                                       .build());
+        if (!tried) {
+            updates.put("rating", DELETE_UPDATE);
+            updates.put("review", DELETE_UPDATE);
+        }
+        var request = UpdateItemRequest.builder()
+                                       .tableName(TABLE_NAME)
+                                       .key(createKey(restaurant))
+                                       .attributeUpdates(updates)
+                                       .build();
+        client.updateItem(request);
+    }
+
+    void replaceCategories(RestaurantRow restaurant, Set<Category> categories) {
+        var attributes = new AttributesCreator()
+                .putIfNotEmpty("category", categories, Category::getValue);
+        var request = UpdateItemRequest.builder()
+                                       .tableName(TABLE_NAME)
+                                       .key(createKey(restaurant))
+                                       .attributeUpdates(Map.of(
+                                               "categories",
+                                               // TODO single attribute building -> use in AttributeCreator
+                                               AttributeValueUpdate.builder()
+                                                                   .value(attributes.attributes.get("category"))
+                                                                   .build()
+                                       ))
+                                       .build();
+        client.updateItem(request);
+    }
+
+    void replaceNotes(RestaurantRow restaurant, List<String> notes) {
+        var attributes = new AttributesCreator()
+                .putIfNotEmpty("notes", notes);
+        var request = UpdateItemRequest.builder()
+                                       .tableName(TABLE_NAME)
+                                       .key(createKey(restaurant))
+                                       .attributeUpdates(Map.of(
+                                               "notes",
+                                               // TODO single attribute building -> use in AttributeCreator
+                                               AttributeValueUpdate.builder()
+                                                                   .value(attributes.attributes.get("notes"))
+                                                                   .build()
+                                       ))
+                                       .build();
+        client.updateItem(request);
+    }
+
+    private Optional<RestaurantRow> findByUserIdAndRestaurantName(String userId, String restaurantName) {
         var request = GetItemRequest.builder()
-                                    .tableName("Restaurant")
+                                    .tableName(TABLE_NAME)
                                     .key(createKey(userId, restaurantName))
                                     .build();
         var response = client.getItem(request);
@@ -57,61 +164,6 @@ class RestaurantService {
                                         .review(extractor.string("review"))
                                         .notes(extractor.list("notes"))
                                         .build());
-    }
-
-    void rename(RestaurantRow restaurant, String newName) {
-        // TODO add copy with new name + delete old
-    }
-
-    void delete(RestaurantRow restaurant) {
-    }
-
-    void setRating(RestaurantRow restaurant, Integer rating) {
-        // TODO
-        if (rating == null) {
-
-        } else {
-
-        }
-    }
-
-    void setReview(RestaurantRow restaurant, String review) {
-        // TODO
-        if (review == null) {
-
-        } else {
-
-        }
-    }
-
-    void setVisited(RestaurantRow restaurant, boolean visited) {
-        // TODO (remove rating, review and notes when not visited)
-        if (visited) {
-
-        } else {
-
-        }
-    }
-
-    void replaceCategories(RestaurantRow restaurant, Set<Category> categories) {
-        var attributes = new AttributesCreator()
-                .putIfNotEmpty("category", categories, Category::getValue);
-        var request = UpdateItemRequest.builder()
-                                       .tableName("Restaurant")
-                                       .key(createKey(restaurant))
-                                       .attributeUpdates(Map.of(
-                                               "categories",
-                                               // TODO single attribute building -> use in AttributeCreator
-                                               AttributeValueUpdate.builder()
-                                                                   .value(attributes.attributes.get("category"))
-                                                                   .build()
-                                       ))
-                                       .build();
-        client.updateItem(request);
-    }
-
-    void replaceNotes(RestaurantRow restaurant, List<String> notes) {
-
     }
 
     // TODO vvv extract (DAO layer?) vvv
@@ -133,12 +185,12 @@ class RestaurantService {
 
     private static Map<String, AttributeValue> toItem(RestaurantRow restaurant) {
         return new AttributesCreator()
-                .putIfPresent("userId",         restaurant.userId(),         AttributeValue.Builder::s)
-                .putIfPresent("restaurantName", restaurant.restaurantName(), AttributeValue.Builder::s)
-                .putIfPresent("triedBefore",    restaurant.triedBefore(),    AttributeValue.Builder::bool)
-                .putIfPresent("review",         restaurant.review(),         AttributeValue.Builder::s)
-                .putIfPresent("rating",         restaurant.ratingString(),   AttributeValue.Builder::n)
-                .putIfNotEmpty("notes",      restaurant.notes())
+                .putIfPresent("userId", restaurant.userId(), AttributeValue::fromS)
+                .putIfPresent("restaurantName", restaurant.restaurantName(), AttributeValue::fromS)
+                .putIfPresent("triedBefore", restaurant.triedBefore(), AttributeValue::fromBool)
+                .putIfPresent("review", restaurant.review(), AttributeValue::fromS)
+                .putIfPresent("rating", restaurant.ratingString(), AttributeValue::fromN)
+                .putIfNotEmpty("notes", restaurant.notes())
                 .putIfNotEmpty("categories", restaurant.categories(), Category::getValue)
                 .create();
     }
@@ -148,13 +200,11 @@ class RestaurantService {
         private Map<String, AttributeValue> attributes = new HashMap<>();
 
         <T> AttributesCreator putIfPresent(String attributeName, T nullable,
-                                           BiConsumer<AttributeValue.Builder, T> builderMethod) {
+                                           Function<T, AttributeValue> attributeCreator) {
             if (nullable == null) {
                 return this;
             }
-            var builder = AttributeValue.builder();
-            builderMethod.accept(builder, nullable);
-            attributes.put(attributeName, builder.build());
+            attributes.put(attributeName, attributeCreator.apply(nullable));
             return this;
         }
 
@@ -162,13 +212,9 @@ class RestaurantService {
             if (values.isEmpty()) {
                 return this;
             }
-            attributes.put(attributeName, AttributeValue.builder()
-                                                        .l(values.stream()
-                                                                 .map(value -> AttributeValue.builder()
-                                                                                             .s(value)
-                                                                                             .build())
-                                                                 .toList())
-                                                        .build());
+            attributes.put(attributeName, fromL(values.stream()
+                                                      .map(AttributeValue::fromS)
+                                                      .toList()));
             return this;
         }
 

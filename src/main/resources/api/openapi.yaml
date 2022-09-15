@@ -3,7 +3,7 @@ info:
   title: Personal restaurants knowledge base
   description: |
     This API allows to store and view personal ratings and notes 
-    related to visited or ordered from restaurants 
+    related to tried or ordered from restaurants 
     and places you may want to visit/order from in the future.
     
     Note: all requests are performed in context of currently logged in user.
@@ -114,6 +114,7 @@ paths:
       - $ref: '#/components/parameters/path.RestaurantName'
     put:
       summary: Update rating of the restaurant
+      description: Additionally marks the restaurant as tried
       operationId: updateRestaurantRating
       tags: [Restaurant entry]
       requestBody:
@@ -136,7 +137,8 @@ paths:
     parameters:
       - $ref: '#/components/parameters/path.RestaurantName'
     put:
-      summary: Add/update review of the restaurant
+      summary: Update review of the restaurant
+      description: Additionally marks the restaurant as tried
       operationId: updateRestaurantReview
       tags: [Restaurant entry]
       requestBody:
@@ -152,7 +154,7 @@ paths:
                 - rating
       responses:
         204:
-          description: Review added/updated
+          description: Review updated
         404:
           description: Restaurant with given name not found
     delete:
@@ -164,26 +166,26 @@ paths:
           description: Review deleted
         404:
           description: Restaurant with given name not found
-  /restaurants/{restaurantName}/visited:
+  /restaurants/{restaurantName}/tried:
     parameters:
       - $ref: '#/components/parameters/path.RestaurantName'
     post:
-      summary: Mark restaurant as visited
-      operationId: markRestaurantAsVisited
+      summary: Mark restaurant as tried
+      operationId: markRestaurantAsTried
       tags: [Restaurant entry]
       responses:
         204:
-          description: Marked as visited
+          description: Marked as tried
         404:
           description: Restaurant with given name not found
     delete:
-      summary: Mark restaurant as not visited
-      operationId: markRestaurantAsNotVisited
-      description: Additionally removes the review, rating and notes from the restaurant entry
+      summary: Mark restaurant as not tried
+      operationId: markRestaurantAsNotTried
+      description: Additionally removes the review and rating from the restaurant entry
       tags: [Restaurant entry]
       responses:
         204:
-          description: Marked as not visited
+          description: Marked as not tried
         404:
           description: Restaurant with given name not found
   /restaurants/{restaurantName}/categories:

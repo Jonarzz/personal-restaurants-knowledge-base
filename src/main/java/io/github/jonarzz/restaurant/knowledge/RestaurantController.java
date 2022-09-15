@@ -47,7 +47,7 @@ class RestaurantController implements RestaurantsApi {
         return switch (restaurantService.fetch(restaurantName)) {
             case Found found -> found.thenReturn(ignored -> status(CONFLICT).build());
             case NotFound notFound -> notFound.then(() -> {
-                restaurantService.save(RestaurantRow.from(restaurant));
+                restaurantService.create(RestaurantRow.from(restaurant));
                 return created(URI.create("/restaurant/" + restaurantName))
                         .build();
             });
@@ -116,13 +116,13 @@ class RestaurantController implements RestaurantsApi {
     }
 
     @Override
-    public ResponseEntity<Void> markRestaurantAsVisited(String restaurantName) {
-        return changeVisitedFlag(restaurantName, true);
+    public ResponseEntity<Void> markRestaurantAsTried(String restaurantName) {
+        return changeTriedFlag(restaurantName, true);
     }
 
     @Override
-    public ResponseEntity<Void> markRestaurantAsNotVisited(String restaurantName) {
-        return changeVisitedFlag(restaurantName, false);
+    public ResponseEntity<Void> markRestaurantAsNotTried(String restaurantName) {
+        return changeTriedFlag(restaurantName, false);
     }
 
     @Override
@@ -218,10 +218,10 @@ class RestaurantController implements RestaurantsApi {
         };
     }
 
-    private ResponseEntity<Void> changeVisitedFlag(String restaurantName, boolean visited) {
+    private ResponseEntity<Void> changeTriedFlag(String restaurantName, boolean tried) {
         return switch (restaurantService.fetch(restaurantName)) {
             case Found found -> found.then(restaurant -> {
-                restaurantService.setVisited(restaurant, visited);
+                restaurantService.setTriedBefore(restaurant, tried);
             });
             case NotFound notFound -> notFound.response();
         };
