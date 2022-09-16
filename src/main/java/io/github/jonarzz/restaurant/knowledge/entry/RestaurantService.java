@@ -1,6 +1,7 @@
 package io.github.jonarzz.restaurant.knowledge.entry;
 
 import static io.github.jonarzz.restaurant.knowledge.dynamodb.AttributesCreator.*;
+import static io.github.jonarzz.restaurant.knowledge.entry.RestaurantItem.Fields.*;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeAction.*;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.*;
 
@@ -48,37 +49,37 @@ class RestaurantService {
 
     void setRating(RestaurantItem restaurant, Integer rating) {
         repository.update(restaurant, Map.of(
-                "rating", asNumberUpdateAttribute(rating),
-                "triedBefore", asUpdateAttribute(fromBool(true))
+                RATING, asNumberUpdateAttribute(rating),
+                TRIED_BEFORE, asUpdateAttribute(fromBool(true))
         ));
     }
 
     void setReview(RestaurantItem restaurant, String review) {
         repository.update(restaurant, Map.of(
-                "review", asUpdateAttribute(fromS(review)),
-                "triedBefore", asUpdateAttribute(fromBool(true))
+                REVIEW, asUpdateAttribute(fromS(review)),
+                TRIED_BEFORE, asUpdateAttribute(fromBool(true))
         ));
     }
 
     void setTriedBefore(RestaurantItem restaurant, boolean tried) {
         Map<String, AttributeValueUpdate> updates = new HashMap<>();
-        updates.put("triedBefore", asUpdateAttribute(fromBool(tried)));
+        updates.put(TRIED_BEFORE, asUpdateAttribute(fromBool(tried)));
         if (!tried) {
-            updates.put("rating", DELETE_UPDATE);
-            updates.put("review", DELETE_UPDATE);
+            updates.put(RATING, DELETE_UPDATE);
+            updates.put(REVIEW, DELETE_UPDATE);
         }
         repository.update(restaurant, updates);
     }
 
     void replaceCategories(RestaurantItem restaurant, Set<Category> categories) {
         repository.update(restaurant, Map.of(
-                "categories", asUpdateAttribute(setAttribute(categories, Category::getValue))
+                CATEGORIES, asUpdateAttribute(setAttribute(categories, Category::getValue))
         ));
     }
 
     void replaceNotes(RestaurantItem restaurant, List<String> notes) {
         repository.update(restaurant, Map.of(
-                "notes", asUpdateAttribute(listAttribute(notes))
+                NOTES, asUpdateAttribute(listAttribute(notes))
         ));
     }
 }

@@ -16,7 +16,7 @@ paths:
       operationId: queryRestaurantsByCriteria
       tags: [Restaurants]
       parameters:
-        - name: nameContaining
+        - name: nameBeginsWith
           in: query
           schema:
             type: string

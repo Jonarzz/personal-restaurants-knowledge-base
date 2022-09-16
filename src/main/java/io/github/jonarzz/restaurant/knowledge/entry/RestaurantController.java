@@ -16,8 +16,11 @@ import io.github.jonarzz.restaurant.knowledge.api.*;
 import io.github.jonarzz.restaurant.knowledge.model.*;
 
 @RestController
+@RequestMapping(RestaurantController.PATH)
 @PreAuthorize("isAuthenticated()")
 class RestaurantController implements RestaurantsApi {
+
+    static final String PATH = "/restaurants";
 
     private RestaurantService restaurantService;
 
@@ -34,7 +37,7 @@ class RestaurantController implements RestaurantsApi {
     }
 
     @Override
-    public ResponseEntity<List<RestaurantData>> queryRestaurantsByCriteria(String nameContaining,
+    public ResponseEntity<List<RestaurantData>> queryRestaurantsByCriteria(String nameBeginsWith,
                                                                            Set<Category> categories,
                                                                            Boolean triedBefore,
                                                                            Integer ratingAtLeast) {
@@ -48,7 +51,7 @@ class RestaurantController implements RestaurantsApi {
             case Found found -> found.thenReturn(ignored -> status(CONFLICT).build());
             case NotFound notFound -> notFound.then(() -> {
                 restaurantService.create(RestaurantItem.from(restaurant));
-                return created(URI.create("/restaurant/" + restaurantName))
+                return created(URI.create(PATH + "/" + restaurantName))
                         .build();
             });
         };

@@ -1,5 +1,6 @@
 package io.github.jonarzz.restaurant.knowledge.entry;
 
+import static io.github.jonarzz.restaurant.knowledge.entry.RestaurantItem.Fields.*;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.*;
 
 import software.amazon.awssdk.services.dynamodb.model.*;
@@ -16,8 +17,8 @@ record RestaurantKey(
     @Override
     public Map<String, AttributeValue> asAttributes() {
         return Map.of(
-                "userId", fromS(userId),
-                "restaurantName", fromS(restaurantName)
+                USER_ID, fromS(userId),
+                RESTAURANT_NAME, fromS(restaurantName)
         );
     }
 

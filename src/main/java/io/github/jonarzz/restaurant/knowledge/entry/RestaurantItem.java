@@ -21,6 +21,20 @@ record RestaurantItem(
         @Singular List<String> notes
 ) implements DynamoDbTable<RestaurantKey> {
 
+    static class Fields {
+
+        static final String USER_ID = "userId";
+        static final String RESTAURANT_NAME = "restaurantName";
+        static final String CATEGORIES = "categories";
+        static final String TRIED_BEFORE = "triedBefore";
+        static final String RATING = "rating";
+        static final String REVIEW = "review";
+        static final String NOTES = "notes";
+
+        private Fields() {
+        }
+    }
+
     RestaurantItem {
         if (restaurantName == null || restaurantName.isBlank()) {
             throw new IllegalArgumentException("Restaurant name cannot be blank");

@@ -8,6 +8,8 @@ import io.github.jonarzz.restaurant.knowledge.dynamodb.*;
 @Configuration
 public class RestaurantEntryManagementConfig {
 
+    private static final String TABLE_NAME = "Restaurant";
+
     @Bean
     public RestaurantController restaurantController(RestaurantService restaurantService) {
         return new RestaurantController(restaurantService);
@@ -20,7 +22,7 @@ public class RestaurantEntryManagementConfig {
 
     @Bean
     DynamoDbRepository<RestaurantItem, RestaurantKey> restaurantRepository(DynamoDbClient dynamoDbClient) {
-        return new DynamoDbRepository<>("Restaurant", restaurantItemMapper(), dynamoDbClient);
+        return new DynamoDbRepository<>(TABLE_NAME, restaurantItemMapper(), dynamoDbClient);
     }
 
     @Bean
