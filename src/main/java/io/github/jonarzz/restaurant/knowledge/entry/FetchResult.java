@@ -1,6 +1,6 @@
-package io.github.jonarzz.restaurant.knowledge;
+package io.github.jonarzz.restaurant.knowledge.entry;
 
-import static io.github.jonarzz.restaurant.knowledge.FetchResult.*;
+import static io.github.jonarzz.restaurant.knowledge.entry.FetchResult.*;
 
 import org.springframework.http.*;
 
@@ -10,25 +10,25 @@ sealed interface FetchResult permits Found, NotFound {
 
     final class Found implements FetchResult {
 
-        private final RestaurantRow restaurant;
+        private final RestaurantItem restaurant;
 
-        Found(RestaurantRow restaurant) {
+        Found(RestaurantItem restaurant) {
             this.restaurant = restaurant;
         }
 
-        <T> ResponseEntity<T> then(Consumer<RestaurantRow> action) {
+        <T> ResponseEntity<T> then(Consumer<RestaurantItem> action) {
             action.accept(restaurant);
             return ResponseEntity.ok()
                                  .build();
         }
 
-        <T> ResponseEntity<T> then(Function<RestaurantRow, T> action) {
+        <T> ResponseEntity<T> then(Function<RestaurantItem, T> action) {
             var result = action.apply(restaurant);
             return ResponseEntity.ok()
                                  .body(result);
         }
 
-        <T> ResponseEntity<T> thenReturn(Function<RestaurantRow, ResponseEntity<T>> supplier) {
+        <T> ResponseEntity<T> thenReturn(Function<RestaurantItem, ResponseEntity<T>> supplier) {
             return supplier.apply(restaurant);
         }
     }

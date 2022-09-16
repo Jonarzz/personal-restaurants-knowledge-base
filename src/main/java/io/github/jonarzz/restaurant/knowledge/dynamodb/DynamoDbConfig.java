@@ -1,4 +1,4 @@
-package io.github.jonarzz.restaurant.knowledge;
+package io.github.jonarzz.restaurant.knowledge.dynamodb;
 
 import static software.amazon.awssdk.regions.Region.*;
 
@@ -8,19 +8,19 @@ import software.amazon.awssdk.auth.credentials.*;
 import software.amazon.awssdk.services.dynamodb.*;
 
 @Configuration
-class DynamoDbConfig {
+public class DynamoDbConfig {
 
     private final String amazonAwsAccessKey;
     private final String amazonAwsSecretKey;
 
-    DynamoDbConfig(@Value("${amazon.aws.accesskey}") String amazonAwsAccessKey,
+    public DynamoDbConfig(@Value("${amazon.aws.accesskey}") String amazonAwsAccessKey,
                    @Value("${amazon.aws.secretkey}") String amazonAwsSecretKey) {
         this.amazonAwsAccessKey = amazonAwsAccessKey;
         this.amazonAwsSecretKey = amazonAwsSecretKey;
     }
 
     @Bean
-    DynamoDbClient amazonDynamoDb() {
+    public DynamoDbClient amazonDynamoDb() {
         return DynamoDbClient.builder()
                              .credentialsProvider(awsCredentialsProvider())
                              .region(EU_CENTRAL_1)

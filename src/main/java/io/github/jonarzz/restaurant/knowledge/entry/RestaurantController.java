@@ -1,6 +1,6 @@
-package io.github.jonarzz.restaurant.knowledge;
+package io.github.jonarzz.restaurant.knowledge.entry;
 
-import static io.github.jonarzz.restaurant.knowledge.FetchResult.*;
+import static io.github.jonarzz.restaurant.knowledge.entry.FetchResult.*;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.ResponseEntity.*;
 
@@ -28,7 +28,7 @@ class RestaurantController implements RestaurantsApi {
     @Override
     public ResponseEntity<RestaurantData> getRestaurantDetails(String restaurantName) {
         return switch (restaurantService.fetch(restaurantName)) {
-            case Found found -> found.then(RestaurantRow::data);
+            case Found found -> found.then(RestaurantItem::data);
             case NotFound notFound -> notFound.response();
         };
     }
@@ -47,7 +47,7 @@ class RestaurantController implements RestaurantsApi {
         return switch (restaurantService.fetch(restaurantName)) {
             case Found found -> found.thenReturn(ignored -> status(CONFLICT).build());
             case NotFound notFound -> notFound.then(() -> {
-                restaurantService.create(RestaurantRow.from(restaurant));
+                restaurantService.create(RestaurantItem.from(restaurant));
                 return created(URI.create("/restaurant/" + restaurantName))
                         .build();
             });
