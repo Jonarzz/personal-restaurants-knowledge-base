@@ -1,6 +1,7 @@
 package io.github.jonarzz.restaurant.knowledge.entry;
 
 import static io.github.jonarzz.restaurant.knowledge.model.Category.*;
+import static java.util.concurrent.TimeUnit.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.InstanceOfAssertFactories.*;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.*;
@@ -12,6 +13,8 @@ import static software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType
 import org.assertj.core.api.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.MethodOrderer.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.boot.test.context.*;
 import org.springframework.context.annotation.*;
@@ -28,6 +31,7 @@ import software.amazon.awssdk.services.dynamodb.model.*;
 import java.net.*;
 import java.util.*;
 import java.util.function.*;
+import java.util.stream.*;
 
 import io.github.jonarzz.restaurant.knowledge.dynamodb.*;
 
@@ -50,6 +54,9 @@ class RestaurantServiceTest {
     static final String TRIED_RESTAURANT_NAME = "Subway";
     static final String TRIED_RESTAURANT_RENAMED = "Subway Nowy Świat";
     static final String NOT_TRIED_RESTAURANT_NAME = "Burger King";
+    static final int FILLER_ENTRIES_COUNT = 50;
+
+    static final int QUERY_TIMEOUT_MS = 100;
 
     @Container
     static final GenericContainer<?> dynamoDbContainer = new GenericContainer<>("amazon/dynamodb-local:latest")
@@ -69,13 +76,13 @@ class RestaurantServiceTest {
                                  .credentialsProvider(awsCredentialsProvider)
                                  .build();
         }
-    }
 
+    }
     @Autowired
     DynamoDbClient amazonDynamoDb;
+
     @Autowired
     RestaurantService restaurantService;
-
     @BeforeAll
     void beforeAll() {
         amazonDynamoDb.createTable(prepareCreateTableRequest());
@@ -131,33 +138,245 @@ class RestaurantServiceTest {
                 .isThrownBy(() -> restaurantService.create(toSave));
     }
 
+    @ParameterizedTest
+    @MethodSource("intRange")
+    @Order(20)
+    void createManyRestaurantEntries(int number) {
+        var toSave = RestaurantItem.builder()
+                                   .userId(TEST_USER)
+                                   .restaurantName("one-of-many-" + number)
+                                   .category(OTHER)
+                                   .build();
+
+        assertThatNoException()
+                .isThrownBy(() -> restaurantService.create(toSave));
+    }
+
+    IntStream intRange() {
+        return IntStream.rangeClosed(1, FILLER_ENTRIES_COUNT);
+    }
+
     @Test
     @Order(30)
     void findNotTriedByUserIdAndName_afterAddingTwo() {
-        assertRestaurantFound(NOT_TRIED_RESTAURANT_NAME)
-                .returns(TEST_USER, RestaurantItem::userId)
-                .returns(NOT_TRIED_RESTAURANT_NAME, RestaurantItem::restaurantName)
-                .returns(Set.of(FAST_FOOD, BURGER), RestaurantItem::categories)
-                .returns(false, RestaurantItem::triedBefore)
-                .returns(null, RestaurantItem::rating)
-                .returns(null, RestaurantItem::review)
-                .returns(List.of(), RestaurantItem::notes);
+        var result = assertRestaurantFound(NOT_TRIED_RESTAURANT_NAME);
+
+        assertNotTriedRestaurantInitial(result);
     }
 
     @Test
     @Order(30)
     void findTriedByUserIdAndName_afterAddingTwo() {
-        assertRestaurantFound(TRIED_RESTAURANT_NAME)
-                .returns(TEST_USER, RestaurantItem::userId)
-                .returns(TRIED_RESTAURANT_NAME, RestaurantItem::restaurantName)
-                .returns(Set.of(FAST_FOOD, SANDWICH), RestaurantItem::categories)
-                .returns(true, RestaurantItem::triedBefore)
-                .returns(6, RestaurantItem::rating)
-                .returns("Good enough", RestaurantItem::review)
-                .returns(List.of(
-                        "Tuna should be ordered cold",
-                        "Don't go too heavy on the veggies"
-                ), RestaurantItem::notes);
+        var restaurant = assertRestaurantFound(TRIED_RESTAURANT_NAME);
+
+        assertTriedRestaurantInitial(restaurant);
+    }
+
+    @Test
+    @Order(30)
+    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
+    void queryByName_noResults() {
+        var criteria = RestaurantQueryCriteria.builder()
+                                              .nameBeginsWith("i do not exist")
+                                              .build();
+
+        var result = restaurantService.query(criteria);
+
+        assertThat(result)
+                .isEmpty();
+    }
+
+    @Test
+    @Order(30)
+    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
+    void queryByNameStartingWith_triedRestaurant() {
+        var criteria = RestaurantQueryCriteria.builder()
+                                              .nameBeginsWith(TRIED_RESTAURANT_NAME.substring(0, 3))
+                                              .build();
+
+        var result = restaurantService.query(criteria);
+
+        assertTriedRestaurantInitial(assertThat(result)
+                                             .singleElement());
+    }
+
+    @Test
+    @Order(30)
+    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
+    void queryByNameStartingWith_notTriedRestaurant() {
+        var criteria = RestaurantQueryCriteria.builder()
+                                              .nameBeginsWith(NOT_TRIED_RESTAURANT_NAME.substring(0, 5))
+                                              .build();
+
+        var result = restaurantService.query(criteria);
+
+        assertNotTriedRestaurantInitial(assertThat(result)
+                                                .singleElement());
+    }
+
+    @Test
+    @Order(30)
+    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
+    void queryByTriedBefore_triedRestaurant() {
+        var criteria = RestaurantQueryCriteria.builder()
+                                              .triedBefore(true)
+                                              .build();
+
+        var result = restaurantService.query(criteria);
+
+        assertTriedRestaurantInitial(assertThat(result)
+                                              .singleElement());
+    }
+
+    @Test
+    @Order(30)
+    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
+    void queryByTriedBefore_notTriedRestaurant() {
+        var criteria = RestaurantQueryCriteria.builder()
+                                              .triedBefore(false)
+                                              .build();
+
+        var result = restaurantService.query(criteria);
+
+        assertThat(result)
+                .hasSize(1 + FILLER_ENTRIES_COUNT)
+                .anySatisfy(restaurant -> assertNotTriedRestaurantInitial(assertThat(restaurant)));
+    }
+
+    @Test
+    @Order(30)
+    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
+    void queryByCommonCategory() {
+        var criteria = RestaurantQueryCriteria.builder()
+                                              .category(FAST_FOOD)
+                                              .build();
+
+        var result = restaurantService.query(criteria);
+
+        assertThat(result)
+                .hasSize(2)
+                .anySatisfy(restaurant -> assertTriedRestaurantInitial(assertThat(restaurant)))
+                .anySatisfy(restaurant -> assertNotTriedRestaurantInitial(assertThat(restaurant)));
+    }
+
+    @Test
+    @Order(30)
+    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
+    void queryByCategory_triedBefore() {
+        var criteria = RestaurantQueryCriteria.builder()
+                                              .category(SANDWICH)
+                                              .build();
+
+        var result = restaurantService.query(criteria);
+
+        assertTriedRestaurantInitial(assertThat(result)
+                                             .singleElement());
+    }
+
+    @Test
+    @Order(30)
+    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
+    void queryByCategory_notTriedBefore() {
+        var criteria = RestaurantQueryCriteria.builder()
+                                              .category(BURGER)
+                                              .build();
+
+        var result = restaurantService.query(criteria);
+
+        assertNotTriedRestaurantInitial(assertThat(result)
+                                                .singleElement());
+    }
+
+    @Test
+    @Order(30)
+    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
+    void queryByAll_triedRestaurant() {
+        var criteria = RestaurantQueryCriteria.builder()
+                                              .nameBeginsWith(TRIED_RESTAURANT_NAME.substring(0, 2))
+                                              .category(FAST_FOOD)
+                                              .triedBefore(true)
+                                              .build();
+
+        var result = restaurantService.query(criteria);
+
+        assertTriedRestaurantInitial(assertThat(result)
+                                              .singleElement());
+    }
+
+    @Test
+    @Order(30)
+    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
+    void queryByRating_triedRestaurant() {
+        var criteria = RestaurantQueryCriteria.builder()
+                                              .ratingAtLeast(6)
+                                              .build();
+
+        var result = restaurantService.query(criteria);
+
+        assertTriedRestaurantInitial(assertThat(result)
+                                              .singleElement());
+    }
+
+    @Test
+    @Order(30)
+    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
+    void queryByRating_noResults() {
+        var criteria = RestaurantQueryCriteria.builder()
+                                              .ratingAtLeast(7)
+                                              .build();
+
+        var result = restaurantService.query(criteria);
+
+        assertThat(result)
+                .isEmpty();
+    }
+
+    @Test
+    @Order(30)
+    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
+    void queryByAll_notTriedRestaurant() {
+        var criteria = RestaurantQueryCriteria.builder()
+                                              .nameBeginsWith(NOT_TRIED_RESTAURANT_NAME.substring(0, 4))
+                                              .category(BURGER)
+                                              .triedBefore(false)
+                                              // ignored because of triedBefore set to false
+                                              .ratingAtLeast(9)
+                                              .build();
+
+        var result = restaurantService.query(criteria);
+
+        assertNotTriedRestaurantInitial(assertThat(result)
+                                                .singleElement());
+    }
+
+    @Test
+    @Order(30)
+    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
+    void queryByAll_noResults() {
+        var criteria = RestaurantQueryCriteria.builder()
+                                              .nameBeginsWith(NOT_TRIED_RESTAURANT_NAME.substring(0, 4))
+                                              .category(FAST_FOOD)
+                                              .triedBefore(true)
+                                              .ratingAtLeast(3)
+                                              .build();
+
+        var result = restaurantService.query(criteria);
+
+        assertThat(result)
+                .isEmpty();
+    }
+
+    @Test
+    @Order(30)
+    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
+    void queryWithEmptyCriteria() {
+        var criteria = RestaurantQueryCriteria.builder()
+                                              .build();
+
+        ThrowableAssert.ThrowingCallable queryMethod = () -> restaurantService.query(criteria);
+
+        assertThatThrownBy(queryMethod)
+                .hasMessage("Query criteria cannot be empty");
     }
 
     @Test
@@ -203,7 +422,7 @@ class RestaurantServiceTest {
     }
 
     @Test
-    @Order(50)
+    @Order(FILLER_ENTRIES_COUNT)
     void replaceCategories() {
         var newCategories = Set.of(VEGAN, FAST_FOOD, SANDWICH, CHICKEN);
         var restaurantName = TRIED_RESTAURANT_RENAMED;
@@ -216,7 +435,7 @@ class RestaurantServiceTest {
     }
 
     @Test
-    @Order(50)
+    @Order(FILLER_ENTRIES_COUNT)
     void replaceNotes() {
         var newNotes = List.of("No hot tuna!", "4-5 veggies is enough");
         var restaurantName = TRIED_RESTAURANT_RENAMED;
@@ -229,7 +448,7 @@ class RestaurantServiceTest {
     }
 
     @Test
-    @Order(50)
+    @Order(FILLER_ENTRIES_COUNT)
     void setRating() {
         var newRating = 7;
         var restaurantName = NOT_TRIED_RESTAURANT_NAME;
@@ -309,6 +528,29 @@ class RestaurantServiceTest {
                 .as("Restaurant with name: " + restaurantName)
                 .isInstanceOf(FetchResult.Found.class)
                 .extracting("restaurant", type(RestaurantItem.class));
+    }
+
+    private static void assertNotTriedRestaurantInitial(ObjectAssert<RestaurantItem> restaurant) {
+        restaurant.returns(TEST_USER, RestaurantItem::userId)
+                  .returns(NOT_TRIED_RESTAURANT_NAME, RestaurantItem::restaurantName)
+                  .returns(Set.of(FAST_FOOD, BURGER), RestaurantItem::categories)
+                  .returns(false, RestaurantItem::triedBefore)
+                  .returns(null, RestaurantItem::rating)
+                  .returns(null, RestaurantItem::review)
+                  .returns(List.of(), RestaurantItem::notes);
+    }
+
+    private static void assertTriedRestaurantInitial(ObjectAssert<RestaurantItem> restaurant) {
+        restaurant.returns(TEST_USER, RestaurantItem::userId)
+                  .returns(TRIED_RESTAURANT_NAME, RestaurantItem::restaurantName)
+                  .returns(Set.of(FAST_FOOD, SANDWICH), RestaurantItem::categories)
+                  .returns(true, RestaurantItem::triedBefore)
+                  .returns(6, RestaurantItem::rating)
+                  .returns("Good enough", RestaurantItem::review)
+                  .returns(List.of(
+                          "Tuna should be ordered cold",
+                          "Don't go too heavy on the veggies"
+                  ), RestaurantItem::notes);
     }
 
     private static CreateTableRequest prepareCreateTableRequest() {

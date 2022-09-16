@@ -12,6 +12,13 @@ public class AttributesCreator {
 
     private Map<String, AttributeValue> attributes = new HashMap<>();
 
+    public static AttributeValue numberAttribute(Integer value) {
+        return Optional.ofNullable(value)
+                       .map(String::valueOf)
+                       .map(AttributeValue::fromN)
+                       .orElse(null);
+    }
+
     public static AttributeValue listAttribute(List<String> values) {
         return fromL(values.stream()
                            .map(AttributeValue::fromS)
@@ -34,10 +41,7 @@ public class AttributesCreator {
 
     public static AttributeValueUpdate asNumberUpdateAttribute(Integer value) {
         return AttributeValueUpdate.builder()
-                                   .value(Optional.ofNullable(value)
-                                                  .map(String::valueOf)
-                                                  .map(AttributeValue::fromN)
-                                                  .orElse(null))
+                                   .value(numberAttribute(value))
                                    .build();
     }
 
@@ -63,7 +67,7 @@ public class AttributesCreator {
         return this;
     }
 
-    public Map<String, AttributeValue> create() {
+    Map<String, AttributeValue> toAttributes() {
         return attributes;
     }
 }

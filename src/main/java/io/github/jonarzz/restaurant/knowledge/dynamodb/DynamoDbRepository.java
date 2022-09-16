@@ -30,10 +30,30 @@ public class DynamoDbRepository<T extends DynamoDbTable<K>, K extends DynamoDbKe
         return Optional.of(itemMapper.createItem(extractor));
     }
 
+    public List<T> query(QueryCriteria criteria) {
+        if (criteria.isEmpty()) {
+            throw new IllegalArgumentException("Query criteria cannot be empty");
+        }
+        var request = QueryRequest.builder()
+                                  .tableName(tableName)
+                                  .keyConditions(criteria.keyConditions())
+                                  .queryFilter(criteria.queryConditions())
+                                  .build();
+        return client.query(request)
+                     .items()
+                     .stream()
+                     .map(item -> {
+                         var extractor = new ItemExtractor(item);
+                         return itemMapper.createItem(extractor);
+                     })
+                     .toList();
+    }
+
     public void create(T item) {
         var request = PutItemRequest.builder()
                                     .tableName(tableName)
-                                    .item(itemMapper.createAttributes(item))
+                                    .item(itemMapper.attributesCreator(item)
+                                                    .toAttributes())
                                     .build();
         client.putItem(request);
     }
@@ -56,5 +76,4 @@ public class DynamoDbRepository<T extends DynamoDbTable<K>, K extends DynamoDbKe
                                        .build();
         client.deleteItem(request);
     }
-
 }

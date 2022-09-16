@@ -1,9 +1,9 @@
 package io.github.jonarzz.restaurant.knowledge.entry;
 
+import static io.github.jonarzz.restaurant.knowledge.entry.RestaurantKey.*;
 import static java.lang.Boolean.*;
 
 import lombok.*;
-import org.springframework.security.core.context.*;
 
 import java.util.*;
 
@@ -46,9 +46,7 @@ record RestaurantItem(
 
     static RestaurantItem from(RestaurantData restaurant) {
         return RestaurantItem.builder()
-                             .userId(SecurityContextHolder.getContext()
-                                                         .getAuthentication()
-                                                         .getName())
+                             .userId(contextUserId())
                              .restaurantName(restaurant.getName())
                              .categories(restaurant.getCategories())
                              .triedBefore(TRUE.equals(restaurant.getTriedBefore()))

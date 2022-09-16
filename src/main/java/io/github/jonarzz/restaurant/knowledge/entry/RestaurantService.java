@@ -5,7 +5,6 @@ import static io.github.jonarzz.restaurant.knowledge.entry.RestaurantItem.Fields
 import static software.amazon.awssdk.services.dynamodb.model.AttributeAction.*;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.*;
 
-import org.springframework.security.core.context.*;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.util.*;
@@ -14,6 +13,8 @@ import io.github.jonarzz.restaurant.knowledge.dynamodb.*;
 import io.github.jonarzz.restaurant.knowledge.model.*;
 
 class RestaurantService {
+
+    // TODO cache
 
     private static final AttributeValueUpdate DELETE_UPDATE = AttributeValueUpdate.builder()
                                                                                   .action(DELETE)
@@ -26,12 +27,13 @@ class RestaurantService {
     }
 
     FetchResult fetch(String restaurantName) {
-        var userId = SecurityContextHolder.getContext()
-                                          .getAuthentication()
-                                          .getName();
-        return repository.findByKey(new RestaurantKey(userId, restaurantName))
+        return repository.findByKey(new RestaurantKey(restaurantName))
                          .<FetchResult>map(FetchResult.Found::new)
                          .orElseGet(FetchResult.NotFound::new);
+    }
+
+    List<RestaurantItem> query(RestaurantQueryCriteria criteria) {
+        return repository.query(criteria);
     }
 
     void create(RestaurantItem item) {
@@ -82,4 +84,5 @@ class RestaurantService {
                 NOTES, asUpdateAttribute(listAttribute(notes))
         ));
     }
+
 }

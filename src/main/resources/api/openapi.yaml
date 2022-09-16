@@ -20,14 +20,10 @@ paths:
           in: query
           schema:
             type: string
-        - name: categories
+        - name: category
           in: query
           schema:
-            type: array
-            minItems: 1
-            uniqueItems: true
-            items:
-              $ref: '#/components/schemas/Category'
+            $ref: '#/components/schemas/Category'
         - name: triedBefore
           in: query
           schema:
@@ -45,6 +41,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/RestaurantData'
+        400:
+          description: When criteria is empty
     post:
       summary: Create a restaurant entry
       operationId: createRestaurant

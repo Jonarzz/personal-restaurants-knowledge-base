@@ -38,10 +38,23 @@ class RestaurantController implements RestaurantsApi {
 
     @Override
     public ResponseEntity<List<RestaurantData>> queryRestaurantsByCriteria(String nameBeginsWith,
-                                                                           Set<Category> categories,
+                                                                           Category category,
                                                                            Boolean triedBefore,
                                                                            Integer ratingAtLeast) {
-        return null; // TODO
+        var criteria = RestaurantQueryCriteria.builder()
+                                              .nameBeginsWith(nameBeginsWith)
+                                              .category(category)
+                                              .triedBefore(triedBefore)
+                                              .ratingAtLeast(ratingAtLeast)
+                                              .build();
+        if (criteria.isEmpty()) {
+            return badRequest()
+                    .build();
+        }
+        return ok(restaurantService.query(criteria)
+                                   .stream()
+                                   .map(RestaurantItem::data)
+                                   .toList());
     }
 
     @Override
