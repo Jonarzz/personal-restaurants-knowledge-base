@@ -33,6 +33,8 @@ class RestaurantService {
     }
 
     List<RestaurantItem> query(RestaurantQueryCriteria criteria) {
+        // TODO case insensitive name query
+        //      (save restaurant name lowercase as sort key + actual value as attribute)
         return repository.query(criteria);
     }
 

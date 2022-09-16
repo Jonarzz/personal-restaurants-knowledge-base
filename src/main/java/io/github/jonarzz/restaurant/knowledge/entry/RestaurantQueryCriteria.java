@@ -8,6 +8,7 @@ import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.*;
 import static software.amazon.awssdk.services.dynamodb.model.ComparisonOperator.*;
 
 import lombok.Builder;
+import lombok.*;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.util.*;
@@ -16,6 +17,8 @@ import io.github.jonarzz.restaurant.knowledge.dynamodb.*;
 import io.github.jonarzz.restaurant.knowledge.model.*;
 
 @Builder
+@ToString
+@EqualsAndHashCode
 class RestaurantQueryCriteria implements QueryCriteria {
 
     private String nameBeginsWith;

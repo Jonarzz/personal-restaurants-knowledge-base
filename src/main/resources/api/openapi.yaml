@@ -15,23 +15,40 @@ paths:
       summary: Query restaurants by criteria
       operationId: queryRestaurantsByCriteria
       tags: [Restaurants]
+      x-contracts:
+        - contractId: 1
+          name: Should return restaurants data
+        - contractId: 2
+          name: Should return bad request when no param is provided
       parameters:
         - name: nameBeginsWith
           in: query
           schema:
             type: string
+          x-contracts:
+            - contractId: 1
+              value: KF
         - name: category
           in: query
           schema:
             $ref: '#/components/schemas/Category'
+          x-contracts:
+            - contractId: 1
+              value: FAST_FOOD
         - name: triedBefore
           in: query
           schema:
             type: boolean
+          x-contracts:
+            - contractId: 1
+              value: true
         - name: ratingAtLeast
           in: query
           schema:
             $ref: '#/components/schemas/Rating'
+          x-contracts:
+            - contractId: 1
+              value: 3
       responses:
         200:
           description: OK
@@ -41,8 +58,22 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/RestaurantData'
+          x-contracts:
+            - contractId: 1
+              body:
+                - name: KFC City Centre
+                  categories: ['FAST_FOOD', 'CHICKEN']
+                  triedBefore: true
+                  rating: 4
+                  review: 'Not my gig'
+                - name: KFC Some Street
+                  categories: ['FAST_FOOD', 'CHICKEN']
+                  triedBefore: true
+                  rating: 5
         400:
-          description: When criteria is empty
+          description: When no param is provided
+          x-contracts:
+            - contractId: 2
     post:
       summary: Create a restaurant entry
       operationId: createRestaurant

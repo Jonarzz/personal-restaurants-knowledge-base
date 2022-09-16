@@ -5,7 +5,6 @@ import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.ResponseEntity.*;
 
 import org.springframework.http.*;
-import org.springframework.security.access.prepost.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.*;
@@ -16,11 +15,10 @@ import io.github.jonarzz.restaurant.knowledge.api.*;
 import io.github.jonarzz.restaurant.knowledge.model.*;
 
 @RestController
-@RequestMapping(RestaurantController.PATH)
-@PreAuthorize("isAuthenticated()")
+// @PreAuthorize("isAuthenticated()")
 class RestaurantController implements RestaurantsApi {
 
-    static final String PATH = "/restaurants";
+    private static final String PATH = "/restaurants";
 
     private RestaurantService restaurantService;
 
