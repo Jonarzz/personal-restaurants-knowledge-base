@@ -124,7 +124,8 @@ class RestaurantServiceTest {
                                    .restaurantName(TRIED_RESTAURANT_NAME)
                                    .category(FAST_FOOD)
                                    .category(SANDWICH)
-                                   .triedBefore(true)
+                                   // item with rating and/or review will be marked as tried before automatically
+                                   .triedBefore(false)
                                    .rating(6)
                                    .review("Good enough")
                                    .note("Tuna should be ordered cold")

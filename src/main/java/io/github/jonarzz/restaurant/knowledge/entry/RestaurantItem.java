@@ -53,7 +53,7 @@ record RestaurantItem(
                              .rating(restaurant.getRating())
                              .review(restaurant.getReview())
                              .notes(Optional.ofNullable(restaurant.getNotes())
-                                           .orElseGet(ArrayList::new))
+                                            .orElseGet(ArrayList::new))
                              .build();
     }
 
@@ -78,6 +78,18 @@ record RestaurantItem(
                              .userId(userId)
                              .categories(categories)
                              .triedBefore(triedBefore)
+                             .rating(rating)
+                             .review(review)
+                             .notes(notes)
+                             .build();
+    }
+
+    RestaurantItem markedAsTriedBefore() {
+        return RestaurantItem.builder()
+                             .triedBefore(true)
+                             .restaurantName(restaurantName)
+                             .userId(userId)
+                             .categories(categories)
                              .rating(rating)
                              .review(review)
                              .notes(notes)

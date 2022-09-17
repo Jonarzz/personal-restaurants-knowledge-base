@@ -8,6 +8,7 @@ import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.*;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 import io.github.jonarzz.restaurant.knowledge.dynamodb.*;
 import io.github.jonarzz.restaurant.knowledge.model.*;
@@ -39,6 +40,10 @@ class RestaurantService {
     }
 
     void create(RestaurantItem item) {
+        if (Stream.of(item.rating(), item.review())
+                  .anyMatch(Objects::nonNull)) {
+            item = item.markedAsTriedBefore();
+        }
         repository.create(item);
     }
 
