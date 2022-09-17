@@ -1,7 +1,6 @@
 package io.github.jonarzz.restaurant.knowledge.entry;
 
 import static io.github.jonarzz.restaurant.knowledge.model.Category.*;
-import static java.util.concurrent.TimeUnit.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.InstanceOfAssertFactories.*;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.*;
@@ -55,8 +54,6 @@ class RestaurantServiceTest {
     static final String TRIED_RESTAURANT_RENAMED = "Subway Nowy Świat";
     static final String NOT_TRIED_RESTAURANT_NAME = "Burger King";
     static final int FILLER_ENTRIES_COUNT = 50;
-
-    static final int QUERY_TIMEOUT_MS = 100;
 
     @Container
     static final GenericContainer<?> dynamoDbContainer = new GenericContainer<>("amazon/dynamodb-local:latest")
@@ -174,7 +171,6 @@ class RestaurantServiceTest {
 
     @Test
     @Order(30)
-    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
     void queryByName_noResults() {
         var criteria = RestaurantQueryCriteria.builder()
                                               .nameBeginsWith("i do not exist")
@@ -188,7 +184,6 @@ class RestaurantServiceTest {
 
     @Test
     @Order(30)
-    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
     void queryByNameStartingWith_triedRestaurant() {
         var criteria = RestaurantQueryCriteria.builder()
                                               .nameBeginsWith(TRIED_RESTAURANT_NAME.substring(0, 3))
@@ -202,7 +197,6 @@ class RestaurantServiceTest {
 
     @Test
     @Order(30)
-    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
     void queryByNameStartingWith_notTriedRestaurant() {
         var criteria = RestaurantQueryCriteria.builder()
                                               .nameBeginsWith(NOT_TRIED_RESTAURANT_NAME.substring(0, 5))
@@ -216,7 +210,6 @@ class RestaurantServiceTest {
 
     @Test
     @Order(30)
-    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
     void queryByTriedBefore_triedRestaurant() {
         var criteria = RestaurantQueryCriteria.builder()
                                               .triedBefore(true)
@@ -230,7 +223,6 @@ class RestaurantServiceTest {
 
     @Test
     @Order(30)
-    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
     void queryByTriedBefore_notTriedRestaurant() {
         var criteria = RestaurantQueryCriteria.builder()
                                               .triedBefore(false)
@@ -245,7 +237,6 @@ class RestaurantServiceTest {
 
     @Test
     @Order(30)
-    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
     void queryByCommonCategory() {
         var criteria = RestaurantQueryCriteria.builder()
                                               .category(FAST_FOOD)
@@ -261,7 +252,6 @@ class RestaurantServiceTest {
 
     @Test
     @Order(30)
-    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
     void queryByCategory_triedBefore() {
         var criteria = RestaurantQueryCriteria.builder()
                                               .category(SANDWICH)
@@ -275,7 +265,6 @@ class RestaurantServiceTest {
 
     @Test
     @Order(30)
-    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
     void queryByCategory_notTriedBefore() {
         var criteria = RestaurantQueryCriteria.builder()
                                               .category(BURGER)
@@ -289,7 +278,6 @@ class RestaurantServiceTest {
 
     @Test
     @Order(30)
-    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
     void queryByAll_triedRestaurant() {
         var criteria = RestaurantQueryCriteria.builder()
                                               .nameBeginsWith(TRIED_RESTAURANT_NAME.substring(0, 2))
@@ -305,7 +293,6 @@ class RestaurantServiceTest {
 
     @Test
     @Order(30)
-    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
     void queryByRating_triedRestaurant() {
         var criteria = RestaurantQueryCriteria.builder()
                                               .ratingAtLeast(6)
@@ -319,7 +306,6 @@ class RestaurantServiceTest {
 
     @Test
     @Order(30)
-    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
     void queryByRating_noResults() {
         var criteria = RestaurantQueryCriteria.builder()
                                               .ratingAtLeast(7)
@@ -333,7 +319,6 @@ class RestaurantServiceTest {
 
     @Test
     @Order(30)
-    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
     void queryByAll_notTriedRestaurant() {
         var criteria = RestaurantQueryCriteria.builder()
                                               .nameBeginsWith(NOT_TRIED_RESTAURANT_NAME.substring(0, 4))
@@ -351,7 +336,6 @@ class RestaurantServiceTest {
 
     @Test
     @Order(30)
-    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
     void queryByAll_noResults() {
         var criteria = RestaurantQueryCriteria.builder()
                                               .nameBeginsWith(NOT_TRIED_RESTAURANT_NAME.substring(0, 4))
@@ -368,7 +352,6 @@ class RestaurantServiceTest {
 
     @Test
     @Order(30)
-    @Timeout(value = QUERY_TIMEOUT_MS, unit = MILLISECONDS)
     void queryWithEmptyCriteria() {
         var criteria = RestaurantQueryCriteria.builder()
                                               .build();
