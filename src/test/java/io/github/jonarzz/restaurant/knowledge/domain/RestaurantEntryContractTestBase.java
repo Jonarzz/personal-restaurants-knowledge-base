@@ -1,4 +1,4 @@
-package io.github.jonarzz.restaurant.knowledge.entry;
+package io.github.jonarzz.restaurant.knowledge.domain;
 
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.*;
 

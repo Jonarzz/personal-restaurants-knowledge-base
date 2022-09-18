@@ -1,6 +1,6 @@
-package io.github.jonarzz.restaurant.knowledge.entry;
+package io.github.jonarzz.restaurant.knowledge.domain;
 
-import static io.github.jonarzz.restaurant.knowledge.entry.FetchResult.*;
+import static io.github.jonarzz.restaurant.knowledge.domain.FetchResult.*;
 
 import org.springframework.http.*;
 
@@ -39,7 +39,7 @@ sealed interface FetchResult permits Found, NotFound {
             return supplier.get();
         }
 
-        public <T> ResponseEntity<T> response() {
+        <T> ResponseEntity<T> response() {
             return ResponseEntity.notFound()
                                  .build();
         }

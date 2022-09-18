@@ -1,4 +1,4 @@
-package io.github.jonarzz.restaurant.knowledge.entry;
+package io.github.jonarzz.restaurant.knowledge.domain;
 
 import static io.github.jonarzz.restaurant.knowledge.model.Category.*;
 import static org.assertj.core.api.Assertions.*;
@@ -32,7 +32,7 @@ import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
 
-import io.github.jonarzz.restaurant.knowledge.dynamodb.*;
+import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 @Testcontainers
 @SpringBootTest(
@@ -75,11 +75,13 @@ class RestaurantServiceTest {
         }
 
     }
+
     @Autowired
     DynamoDbClient amazonDynamoDb;
 
     @Autowired
     RestaurantService restaurantService;
+
     @BeforeAll
     void beforeAll() {
         amazonDynamoDb.createTable(prepareCreateTableRequest());
@@ -219,7 +221,7 @@ class RestaurantServiceTest {
         var result = restaurantService.query(criteria);
 
         assertTriedRestaurantInitial(assertThat(result)
-                                              .singleElement());
+                                             .singleElement());
     }
 
     @Test
@@ -289,7 +291,7 @@ class RestaurantServiceTest {
         var result = restaurantService.query(criteria);
 
         assertTriedRestaurantInitial(assertThat(result)
-                                              .singleElement());
+                                             .singleElement());
     }
 
     @Test
@@ -302,7 +304,7 @@ class RestaurantServiceTest {
         var result = restaurantService.query(criteria);
 
         assertTriedRestaurantInitial(assertThat(result)
-                                              .singleElement());
+                                             .singleElement());
     }
 
     @Test

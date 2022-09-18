@@ -1,6 +1,6 @@
-package io.github.jonarzz.restaurant.knowledge.entry;
+package io.github.jonarzz.restaurant.knowledge.domain;
 
-import static io.github.jonarzz.restaurant.knowledge.entry.RestaurantItem.Fields.*;
+import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Fields.*;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.*;
 
 import org.springframework.security.core.context.*;
@@ -8,7 +8,7 @@ import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.util.*;
 
-import io.github.jonarzz.restaurant.knowledge.dynamodb.*;
+import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 record RestaurantKey(
         String userId,

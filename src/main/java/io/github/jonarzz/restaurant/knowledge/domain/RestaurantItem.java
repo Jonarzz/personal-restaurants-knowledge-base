@@ -1,14 +1,14 @@
-package io.github.jonarzz.restaurant.knowledge.entry;
+package io.github.jonarzz.restaurant.knowledge.domain;
 
-import static io.github.jonarzz.restaurant.knowledge.entry.RestaurantKey.*;
+import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantKey.*;
 import static java.lang.Boolean.*;
 
 import lombok.*;
 
 import java.util.*;
 
-import io.github.jonarzz.restaurant.knowledge.dynamodb.*;
 import io.github.jonarzz.restaurant.knowledge.model.*;
+import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 @Builder
 record RestaurantItem(

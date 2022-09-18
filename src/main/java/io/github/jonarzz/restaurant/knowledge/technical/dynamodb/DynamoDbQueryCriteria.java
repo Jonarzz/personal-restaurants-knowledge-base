@@ -1,10 +1,10 @@
-package io.github.jonarzz.restaurant.knowledge.dynamodb;
+package io.github.jonarzz.restaurant.knowledge.technical.dynamodb;
 
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.util.*;
 
-public interface QueryCriteria {
+public interface DynamoDbQueryCriteria {
 
     Map<String, Condition> keyConditions();
 

@@ -6,8 +6,8 @@ import org.springframework.context.annotation.*;
 import org.springframework.security.config.annotation.web.builders.*;
 import org.springframework.security.config.annotation.web.configuration.*;
 
-import io.github.jonarzz.restaurant.knowledge.dynamodb.*;
-import io.github.jonarzz.restaurant.knowledge.entry.*;
+import io.github.jonarzz.restaurant.knowledge.domain.*;
+import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 @Configuration
 @EnableWebSecurity

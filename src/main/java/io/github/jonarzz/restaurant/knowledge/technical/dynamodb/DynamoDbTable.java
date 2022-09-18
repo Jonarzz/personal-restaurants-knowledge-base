@@ -1,4 +1,4 @@
-package io.github.jonarzz.restaurant.knowledge.dynamodb;
+package io.github.jonarzz.restaurant.knowledge.technical.dynamodb;
 
 public interface DynamoDbTable<K extends DynamoDbKey> {
 

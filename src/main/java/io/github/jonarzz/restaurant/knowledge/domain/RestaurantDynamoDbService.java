@@ -1,7 +1,7 @@
-package io.github.jonarzz.restaurant.knowledge.entry;
+package io.github.jonarzz.restaurant.knowledge.domain;
 
-import static io.github.jonarzz.restaurant.knowledge.dynamodb.AttributesCreator.*;
-import static io.github.jonarzz.restaurant.knowledge.entry.RestaurantItem.Fields.*;
+import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Fields.*;
+import static io.github.jonarzz.restaurant.knowledge.technical.dynamodb.AttributesCreator.*;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeAction.*;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.*;
 
@@ -10,10 +10,10 @@ import software.amazon.awssdk.services.dynamodb.model.*;
 import java.util.*;
 import java.util.stream.Stream;
 
-import io.github.jonarzz.restaurant.knowledge.dynamodb.*;
 import io.github.jonarzz.restaurant.knowledge.model.*;
+import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
-class RestaurantService {
+class RestaurantDynamoDbService implements RestaurantService {
 
     // TODO cache
 
@@ -23,23 +23,26 @@ class RestaurantService {
 
     private DynamoDbRepository<RestaurantItem, RestaurantKey> repository;
 
-    RestaurantService(DynamoDbRepository<RestaurantItem, RestaurantKey> repository) {
+    RestaurantDynamoDbService(DynamoDbRepository<RestaurantItem, RestaurantKey> repository) {
         this.repository = repository;
     }
 
-    FetchResult fetch(String restaurantName) {
+    @Override
+    public FetchResult fetch(String restaurantName) {
         return repository.findByKey(new RestaurantKey(restaurantName))
                          .<FetchResult>map(FetchResult.Found::new)
                          .orElseGet(FetchResult.NotFound::new);
     }
 
-    List<RestaurantItem> query(RestaurantQueryCriteria criteria) {
+    @Override
+    public List<RestaurantItem> query(RestaurantQueryCriteria criteria) {
         // TODO case insensitive name query
         //      (save restaurant name lowercase as sort key + actual value as attribute)
-        return repository.query(criteria);
+        return repository.query(new RestaurantDynamoDbCriteria(criteria));
     }
 
-    void create(RestaurantItem item) {
+    @Override
+    public void create(RestaurantItem item) {
         if (Stream.of(item.rating(), item.review())
                   .anyMatch(Objects::nonNull)) {
             item = item.markedAsTriedBefore();
@@ -47,30 +50,35 @@ class RestaurantService {
         repository.create(item);
     }
 
-    void delete(RestaurantItem restaurantItem) {
+    @Override
+    public void delete(RestaurantItem restaurantItem) {
         repository.delete(restaurantItem);
     }
 
-    void rename(RestaurantItem restaurant, String newName) {
+    @Override
+    public void rename(RestaurantItem restaurant, String newName) {
         create(restaurant.renamedTo(newName));
         delete(restaurant);
     }
 
-    void setRating(RestaurantItem restaurant, Integer rating) {
+    @Override
+    public void setRating(RestaurantItem restaurant, Integer rating) {
         repository.update(restaurant, Map.of(
                 RATING, asNumberUpdateAttribute(rating),
                 TRIED_BEFORE, asUpdateAttribute(fromBool(true))
         ));
     }
 
-    void setReview(RestaurantItem restaurant, String review) {
+    @Override
+    public void setReview(RestaurantItem restaurant, String review) {
         repository.update(restaurant, Map.of(
                 REVIEW, asUpdateAttribute(fromS(review)),
                 TRIED_BEFORE, asUpdateAttribute(fromBool(true))
         ));
     }
 
-    void setTriedBefore(RestaurantItem restaurant, boolean tried) {
+    @Override
+    public void setTriedBefore(RestaurantItem restaurant, boolean tried) {
         Map<String, AttributeValueUpdate> updates = new HashMap<>();
         updates.put(TRIED_BEFORE, asUpdateAttribute(fromBool(tried)));
         if (!tried) {
@@ -80,13 +88,15 @@ class RestaurantService {
         repository.update(restaurant, updates);
     }
 
-    void replaceCategories(RestaurantItem restaurant, Set<Category> categories) {
+    @Override
+    public void replaceCategories(RestaurantItem restaurant, Set<Category> categories) {
         repository.update(restaurant, Map.of(
                 CATEGORIES, asUpdateAttribute(setAttribute(categories, Category::getValue))
         ));
     }
 
-    void replaceNotes(RestaurantItem restaurant, List<String> notes) {
+    @Override
+    public void replaceNotes(RestaurantItem restaurant, List<String> notes) {
         repository.update(restaurant, Map.of(
                 NOTES, asUpdateAttribute(listAttribute(notes))
         ));

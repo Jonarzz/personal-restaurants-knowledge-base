@@ -1,4 +1,4 @@
-package io.github.jonarzz.restaurant.knowledge.dynamodb;
+package io.github.jonarzz.restaurant.knowledge.technical.dynamodb;
 
 import software.amazon.awssdk.services.dynamodb.*;
 import software.amazon.awssdk.services.dynamodb.model.*;
@@ -30,7 +30,7 @@ public class DynamoDbRepository<T extends DynamoDbTable<K>, K extends DynamoDbKe
         return Optional.of(itemMapper.createItem(extractor));
     }
 
-    public List<T> query(QueryCriteria criteria) {
+    public List<T> query(DynamoDbQueryCriteria criteria) {
         if (criteria.isEmpty()) {
             throw new IllegalArgumentException("Query criteria cannot be empty");
         }

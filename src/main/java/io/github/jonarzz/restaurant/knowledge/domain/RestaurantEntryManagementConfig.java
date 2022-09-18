@@ -1,9 +1,9 @@
-package io.github.jonarzz.restaurant.knowledge.entry;
+package io.github.jonarzz.restaurant.knowledge.domain;
 
 import org.springframework.context.annotation.*;
 import software.amazon.awssdk.services.dynamodb.*;
 
-import io.github.jonarzz.restaurant.knowledge.dynamodb.*;
+import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 @Configuration
 public class RestaurantEntryManagementConfig {
@@ -16,8 +16,8 @@ public class RestaurantEntryManagementConfig {
     }
 
     @Bean
-    RestaurantService restaurantService(DynamoDbRepository<RestaurantItem, RestaurantKey> restaurantRepository) {
-        return new RestaurantService(restaurantRepository);
+    RestaurantService restaurantDynamoDbService(DynamoDbRepository<RestaurantItem, RestaurantKey> restaurantRepository) {
+        return new RestaurantDynamoDbService(restaurantRepository);
     }
 
     @Bean

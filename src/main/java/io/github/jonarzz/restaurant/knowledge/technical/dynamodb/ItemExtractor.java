@@ -1,4 +1,4 @@
-package io.github.jonarzz.restaurant.knowledge.dynamodb;
+package io.github.jonarzz.restaurant.knowledge.technical.dynamodb;
 
 import static java.util.function.Function.*;
 import static java.util.stream.Collectors.*;

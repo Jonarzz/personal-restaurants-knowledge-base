@@ -143,7 +143,7 @@
                 <configuration>
                     <failOnNoContracts>true</failOnNoContracts>
                     <contractsDirectory>${project.basedir}/src/main/resources/api</contractsDirectory>
-                    <baseClassForTests>io.github.jonarzz.restaurant.knowledge.entry.RestaurantEntryContractTestBase</baseClassForTests>
+                    <baseClassForTests>io.github.jonarzz.restaurant.knowledge.domain.RestaurantEntryContractTestBase</baseClassForTests>
                 </configuration>
                 <dependencies>
                     <dependency>

@@ -1,6 +1,6 @@
-package io.github.jonarzz.restaurant.knowledge.entry;
+package io.github.jonarzz.restaurant.knowledge.domain;
 
-import static io.github.jonarzz.restaurant.knowledge.entry.FetchResult.*;
+import static io.github.jonarzz.restaurant.knowledge.domain.FetchResult.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.ResponseEntity.*;

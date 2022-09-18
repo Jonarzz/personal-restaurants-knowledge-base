@@ -1,4 +1,4 @@
-package io.github.jonarzz.restaurant.knowledge.entry;
+package io.github.jonarzz.restaurant.knowledge.domain;
 
 import static io.github.jonarzz.restaurant.knowledge.model.Category.*;
 import static org.mockito.Mockito.*;
@@ -25,7 +25,7 @@ class RestaurantServiceMockProvider {
                                                                        .build();
 
     static RestaurantService get() {
-        var serviceMock = mock(RestaurantService.class);
+        var serviceMock = mock(RestaurantDynamoDbService.class);
         mockFetch(serviceMock);
         mockQuery(serviceMock);
         return serviceMock;

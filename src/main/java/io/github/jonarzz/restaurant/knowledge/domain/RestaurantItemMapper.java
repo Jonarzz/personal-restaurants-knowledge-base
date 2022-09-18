@@ -1,11 +1,11 @@
-package io.github.jonarzz.restaurant.knowledge.entry;
+package io.github.jonarzz.restaurant.knowledge.domain;
 
-import static io.github.jonarzz.restaurant.knowledge.entry.RestaurantItem.Fields.*;
+import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Fields.*;
 
 import software.amazon.awssdk.services.dynamodb.model.*;
 
-import io.github.jonarzz.restaurant.knowledge.dynamodb.*;
 import io.github.jonarzz.restaurant.knowledge.model.*;
+import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 class RestaurantItemMapper implements ItemMapper<RestaurantItem> {
 

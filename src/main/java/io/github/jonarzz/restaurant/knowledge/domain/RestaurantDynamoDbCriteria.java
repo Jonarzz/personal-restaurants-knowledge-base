@@ -1,30 +1,23 @@
-package io.github.jonarzz.restaurant.knowledge.entry;
+package io.github.jonarzz.restaurant.knowledge.domain;
 
-import static io.github.jonarzz.restaurant.knowledge.dynamodb.AttributesCreator.*;
-import static io.github.jonarzz.restaurant.knowledge.entry.RestaurantItem.Fields.*;
-import static io.github.jonarzz.restaurant.knowledge.entry.RestaurantKey.*;
+import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Fields.*;
+import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantKey.*;
+import static io.github.jonarzz.restaurant.knowledge.technical.dynamodb.AttributesCreator.*;
 import static java.lang.Boolean.*;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.*;
 import static software.amazon.awssdk.services.dynamodb.model.ComparisonOperator.*;
 
-import lombok.Builder;
 import lombok.*;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.util.*;
 
-import io.github.jonarzz.restaurant.knowledge.dynamodb.*;
-import io.github.jonarzz.restaurant.knowledge.model.*;
+import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
-@Builder
-@ToString
-@EqualsAndHashCode
-class RestaurantQueryCriteria implements QueryCriteria {
+@AllArgsConstructor
+class RestaurantDynamoDbCriteria implements DynamoDbQueryCriteria {
 
-    private String nameBeginsWith;
-    private Category category;
-    private Boolean triedBefore;
-    private Integer ratingAtLeast;
+    private RestaurantQueryCriteria criteria;
 
     @Override
     public Map<String, Condition> keyConditions() {
@@ -33,10 +26,10 @@ class RestaurantQueryCriteria implements QueryCriteria {
                                          .comparisonOperator(EQ)
                                          .attributeValueList(fromS(contextUserId()))
                                          .build());
-        if (nameBeginsWith != null) {
+        if (criteria.nameBeginsWith() != null) {
             conditions.put(RESTAURANT_NAME, Condition.builder()
                                                      .comparisonOperator(BEGINS_WITH)
-                                                     .attributeValueList(fromS(nameBeginsWith))
+                                                     .attributeValueList(fromS(criteria.nameBeginsWith()))
                                                      .build());
         }
         return conditions;
@@ -45,23 +38,24 @@ class RestaurantQueryCriteria implements QueryCriteria {
     @Override
     public Map<String, Condition> queryConditions() {
         Map<String, Condition> conditions = new HashMap<>();
-        if (category != null) {
+        if (criteria.category() != null) {
             conditions.put(CATEGORIES, Condition.builder()
                                                 .comparisonOperator(CONTAINS)
-                                                .attributeValueList(fromS(category.getValue()))
+                                                .attributeValueList(fromS(criteria.category()
+                                                                                  .getValue()))
                                                 .build());
         }
-        if (triedBefore != null) {
+        if (criteria.triedBefore() != null) {
             conditions.put(TRIED_BEFORE, Condition.builder()
                                                   .comparisonOperator(EQ)
-                                                  .attributeValueList(fromBool(triedBefore))
+                                                  .attributeValueList(fromBool(criteria.triedBefore()))
                                                   .build());
         }
         // rating only set for restaurants tried before
-        if (ratingAtLeast != null && !FALSE.equals(triedBefore)) {
+        if (criteria.ratingAtLeast() != null && !FALSE.equals(criteria.triedBefore())) {
             conditions.put(RATING, Condition.builder()
                                             .comparisonOperator(GE)
-                                            .attributeValueList(numberAttribute(ratingAtLeast))
+                                            .attributeValueList(numberAttribute(criteria.ratingAtLeast()))
                                             .build());
         }
         return conditions;
@@ -69,9 +63,6 @@ class RestaurantQueryCriteria implements QueryCriteria {
 
     @Override
     public boolean isEmpty() {
-        return nameBeginsWith == null
-               && category == null
-               && triedBefore == null
-               && ratingAtLeast == null;
+        return criteria.isEmpty();
     }
 }
