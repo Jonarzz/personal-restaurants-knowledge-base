@@ -17,9 +17,9 @@ paths:
       tags: [Restaurants]
       x-contracts:
         - contractId: 1
-          name: Should return restaurants data
+          name: Query with all parameters
         - contractId: 2
-          name: Should return bad request when no param is provided
+          name: Try to query with no parameters
       parameters:
         - name: nameBeginsWith
           in: query
@@ -78,11 +78,34 @@ paths:
       summary: Create a restaurant entry
       operationId: createRestaurant
       tags: [Restaurants]
+      x-contracts:
+        - contractId: 1
+          name: Create a restaurant for future visit
+        - contractId: 2
+          name: Create visited restaurant
+        - contractId: 3
+          name: Try to create a restaurant with duplicated name
       requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/RestaurantData'
+        x-contracts:
+          - contractId: 1
+            body:
+              name: Trattoria Napoli
+              categories: ['PIZZA']
+          - contractId: 2
+            body:
+              name: KFC Westfield Arkadia
+              categories: ['FAST_FOOD', 'CHICKEN']
+              rating: 4
+              review: 'Not my gig'
+              notes:
+                - Try to avoid it
+          - contractId: 3
+            body:
+              name: KFC City Centre
       responses:
         201:
           description: Restaurant created
@@ -90,13 +113,17 @@ paths:
             Location:
               schema:
                 type: string
-          content:
-            application/json:
-              schema:
-                type: object
-                nullable: true
+          x-contracts:
+            - contractId: 1
+              headers:
+                Location: /restaurants/Trattoria+Napoli
+            - contractId: 2
+              headers:
+                Location: /restaurants/KFC+Westfield+Arkadia
         409:
           description: Restaurant with given name already exists
+          x-contracts:
+            - contractId: 3
   /restaurants/{restaurantName}:
     parameters:
       - $ref: '#/components/parameters/path.RestaurantName'
@@ -104,15 +131,50 @@ paths:
       summary: Get restaurant details
       operationId: getRestaurantDetails
       tags: [Restaurant entry]
+      x-contracts:
+        - contractId: 1
+          name: Get restaurant details
+          contractPath: /restaurants/KFC City Centre
+        - contractId: 2
+          name: Try to get details of restaurant entry that does not exist
+          contractPath: /restaurants/Trattoria Napoli
       responses:
         200:
-          $ref: '#/components/responses/RestaurantResponse'
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantData'
+          x-contracts:
+            - contractId: 1
+              body:
+                name: KFC City Centre
+                categories: [ 'FAST_FOOD', 'CHICKEN' ]
+                rating: 4
+                review: 'Not my gig'
+                notes:
+                  - Try to avoid it
         404:
           description: Restaurant with given name not found
+          x-contracts:
+            - contractId: 2
     patch:
       summary: Rename the restaurant
       operationId: renameRestaurant
       tags: [Restaurant entry]
+      x-contracts:
+        - contractId: 1
+          name: Successfully rename restaurant
+          contractPath: /restaurants/KFC City Centre
+        - contractId: 2
+          name: Rename to the same name
+          contractPath: /restaurants/KFC City Centre
+        - contractId: 3
+          name: Try to rename restaurant that does not exist
+          contractPath: /restaurants/Trattoria Napoli
+        - contractId: 4
+          name: Try to rename restaurant to a name that matches another restaurant entry
+          contractPath: /restaurants/KFC City Centre
       requestBody:
         required: true
         content:
@@ -124,20 +186,53 @@ paths:
                   type: string
               required:
                 - name
+        x-contracts:
+          - contractId: 1
+            body:
+              name: Trattoria Napoli
+          - contractId: 2
+            body:
+              name: KFC City Centre
+          - contractId: 3
+            body:
+              name: Does not matter
+          - contractId: 4
+            body:
+              name: KFC Some Street
       responses:
         204:
           description: Restaurant renamed
+          x-contracts:
+            - contractId: 1
+            - contractId: 2
         404:
           description: Restaurant with given name not found
+          x-contracts:
+            - contractId: 3
+        409:
+          description: Restaurant with target name already exists
+          x-contracts:
+            - contractId: 4
     delete:
       summary: Delete the restaurant entry
       operationId: deleteRestaurant
       tags: [Restaurant entry]
+      x-contracts:
+        - contractId: 1
+          name: Successfully delete restaurant
+          contractPath: /restaurants/KFC City Centre
+        - contractId: 2
+          name: Try to delete restaurant that does not exist
+          contractPath: /restaurants/Trattoria Napoli
       responses:
         204:
           description: Restaurant entry deleted
+          x-contracts:
+            - contractId: 1
         404:
           description: Restaurant with given name not found
+          x-contracts:
+            - contractId: 2
   /restaurants/{restaurantName}/rating:
     parameters:
       - $ref: '#/components/parameters/path.RestaurantName'

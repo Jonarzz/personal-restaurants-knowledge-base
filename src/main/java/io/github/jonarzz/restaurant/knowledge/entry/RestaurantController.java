@@ -1,6 +1,7 @@
 package io.github.jonarzz.restaurant.knowledge.entry;
 
 import static io.github.jonarzz.restaurant.knowledge.entry.FetchResult.*;
+import static java.nio.charset.StandardCharsets.*;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.ResponseEntity.*;
 
@@ -56,14 +57,15 @@ class RestaurantController implements RestaurantsApi {
     }
 
     @Override
-    public ResponseEntity<Object> createRestaurant(RestaurantData restaurant) {
+    public ResponseEntity<Void> createRestaurant(RestaurantData restaurant) {
         var restaurantName = restaurant.getName();
         return switch (restaurantService.fetch(restaurantName)) {
             case Found found -> found.thenReturn(ignored -> status(CONFLICT).build());
             case NotFound notFound -> notFound.then(() -> {
                 restaurantService.create(RestaurantItem.from(restaurant));
-                return created(URI.create(PATH + "/" + restaurantName))
-                        .build();
+                return created(URI.create(
+                        PATH + "/" + URLEncoder.encode(restaurantName, UTF_8)
+                )).build();
             });
         };
     }
@@ -76,13 +78,13 @@ class RestaurantController implements RestaurantsApi {
             case Found found -> found.thenReturn(restaurant -> {
                 var newName = renameRequest.getName();
                 if (restaurant.restaurantName().equals(newName)) {
-                    return ok().build();
+                    return noContent().build();
                 }
                 return switch (restaurantService.fetch(newName)) {
                     case Found foundNew -> foundNew.thenReturn(ignored -> status(CONFLICT).build());
                     case NotFound notFoundNew -> notFoundNew.then(() -> {
                         restaurantService.rename(restaurant, newName);
-                        return ok().build();
+                        return noContent().build();
                     });
                 };
             });
@@ -92,7 +94,10 @@ class RestaurantController implements RestaurantsApi {
     @Override
     public ResponseEntity<Void> deleteRestaurant(String restaurantName) {
         return switch (restaurantService.fetch(restaurantName)) {
-            case Found found -> found.then(restaurantService::delete);
+            case Found found -> found.thenReturn(restaurant -> {
+                restaurantService.delete(restaurant);
+                return noContent().build();
+            });
             case NotFound notFound -> notFound.response();
         };
     }
