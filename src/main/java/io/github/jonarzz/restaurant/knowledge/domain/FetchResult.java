@@ -18,7 +18,7 @@ sealed interface FetchResult permits Found, NotFound {
 
         <T> ResponseEntity<T> then(Consumer<RestaurantItem> action) {
             action.accept(restaurant);
-            return ResponseEntity.ok()
+            return ResponseEntity.noContent()
                                  .build();
         }
 

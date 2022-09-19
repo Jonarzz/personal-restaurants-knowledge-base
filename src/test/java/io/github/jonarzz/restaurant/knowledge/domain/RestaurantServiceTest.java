@@ -408,7 +408,7 @@ class RestaurantServiceTest {
     }
 
     @Test
-    @Order(FILLER_ENTRIES_COUNT)
+    @Order(50)
     void replaceCategories() {
         var newCategories = Set.of(VEGAN, FAST_FOOD, SANDWICH, CHICKEN);
         var restaurantName = TRIED_RESTAURANT_RENAMED;
@@ -421,7 +421,7 @@ class RestaurantServiceTest {
     }
 
     @Test
-    @Order(FILLER_ENTRIES_COUNT)
+    @Order(50)
     void replaceNotes() {
         var newNotes = List.of("No hot tuna!", "4-5 veggies is enough");
         var restaurantName = TRIED_RESTAURANT_RENAMED;
@@ -434,7 +434,7 @@ class RestaurantServiceTest {
     }
 
     @Test
-    @Order(FILLER_ENTRIES_COUNT)
+    @Order(50)
     void setRating() {
         var newRating = 7;
         var restaurantName = NOT_TRIED_RESTAURANT_NAME;

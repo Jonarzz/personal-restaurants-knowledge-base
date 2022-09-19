@@ -16,7 +16,7 @@ interface RestaurantService {
 
     void rename(RestaurantItem restaurant, String newName);
 
-    void setRating(RestaurantItem restaurant, Integer rating);
+    void setRating(RestaurantItem restaurant, int rating);
 
     void setReview(RestaurantItem restaurant, String review);
 

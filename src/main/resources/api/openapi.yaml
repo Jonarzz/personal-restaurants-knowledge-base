@@ -241,6 +241,22 @@ paths:
       description: Additionally marks the restaurant as tried
       operationId: updateRestaurantRating
       tags: [Restaurant entry]
+      x-contracts:
+        - contractId: 1
+          name: Successfully change rating
+          contractPath: /restaurants/KFC City Centre/rating
+        - contractId: 2
+          name: No rating value
+          contractPath: /restaurants/KFC City Centre/rating
+        - contractId: 3
+          name: Rating less than 1
+          contractPath: /restaurants/KFC City Centre/rating
+        - contractId: 4
+          name: Rating greater than 10
+          contractPath: /restaurants/KFC City Centre/rating
+        - contractId: 5
+          name: Try to change rating for a restaurant that does not exist
+          contractPath: /restaurants/Trattoria Napoli/rating
       requestBody:
         required: true
         content:
@@ -252,11 +268,35 @@ paths:
                   $ref: '#/components/schemas/Rating'
               required:
                 - rating
+        x-contracts:
+          - contractId: 1
+            body:
+              rating: 7
+          - contractId: 2
+          - contractId: 3
+            body:
+              rating: 0
+          - contractId: 4
+            body:
+              rating: 11
+          - contractId: 5
+            body:
+              rating: 9
       responses:
         204:
           description: Rating updated
+          x-contracts:
+            - contractId: 1
+        400:
+          description: Bad rating value (should be an integer between 1 and 10)
+          x-contracts:
+            - contractId: 2
+            - contractId: 3
+            - contractId: 4
         404:
           description: Restaurant with given name not found
+          x-contracts:
+            - contractId: 5
   /restaurants/{restaurantName}/review:
     parameters:
       - $ref: '#/components/parameters/path.RestaurantName'

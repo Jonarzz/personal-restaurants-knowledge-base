@@ -94,9 +94,8 @@ class RestaurantController implements RestaurantsApi {
     @Override
     public ResponseEntity<Void> deleteRestaurant(String restaurantName) {
         return switch (restaurantService.fetch(restaurantName)) {
-            case Found found -> found.thenReturn(restaurant -> {
+            case Found found -> found.then(restaurant -> {
                 restaurantService.delete(restaurant);
-                return noContent().build();
             });
             case NotFound notFound -> notFound.response();
         };

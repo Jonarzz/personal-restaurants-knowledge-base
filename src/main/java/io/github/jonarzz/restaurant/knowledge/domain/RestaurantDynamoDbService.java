@@ -62,7 +62,7 @@ class RestaurantDynamoDbService implements RestaurantService {
     }
 
     @Override
-    public void setRating(RestaurantItem restaurant, Integer rating) {
+    public void setRating(RestaurantItem restaurant, int rating) {
         repository.update(restaurant, Map.of(
                 RATING, asNumberUpdateAttribute(rating),
                 TRIED_BEFORE, asUpdateAttribute(fromBool(true))
