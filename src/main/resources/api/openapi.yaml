@@ -305,6 +305,13 @@ paths:
       description: Additionally marks the restaurant as tried
       operationId: updateRestaurantReview
       tags: [Restaurant entry]
+      x-contracts:
+        - contractId: 1
+          name: Successfully update the review
+          contractPath: /restaurants/KFC City Centre/review
+        - contractId: 2
+          name: Try to update review for restaurant that does not exist
+          contractPath: /restaurants/Trattoria Napoli/review
       requestBody:
         required: true
         content:
@@ -315,21 +322,43 @@ paths:
                 review:
                   type: string
               required:
-                - rating
+                - review
+        x-contracts:
+          - contractId: 1
+            body:
+              review: Some review of the restaurant
+          - contractId: 2
+            body:
+              review: Some review of a restaurant that does not exist
       responses:
         204:
           description: Review updated
+          x-contracts:
+            - contractId: 1
         404:
           description: Restaurant with given name not found
+          x-contracts:
+            - contractId: 2
     delete:
       summary: Delete review of the restaurant
       operationId: deleteRestaurantReview
       tags: [Restaurant entry]
+      x-contracts:
+        - contractId: 1
+          name: Successfully remove the review
+          contractPath: /restaurants/KFC City Centre/review
+        - contractId: 2
+          name: Try to delete review for restaurant that does not exist
+          contractPath: /restaurants/Trattoria Napoli/review
       responses:
         204:
           description: Review deleted
+          x-contracts:
+            - contractId: 1
         404:
           description: Restaurant with given name not found
+          x-contracts:
+            - contractId: 2
   /restaurants/{restaurantName}/tried:
     parameters:
       - $ref: '#/components/parameters/path.RestaurantName'
@@ -337,21 +366,43 @@ paths:
       summary: Mark restaurant as tried
       operationId: markRestaurantAsTried
       tags: [Restaurant entry]
+      x-contracts:
+        - contractId: 1
+          name: Successfully mark the restaurant as tried
+          contractPath: /restaurants/KFC City Centre/tried
+        - contractId: 2
+          name: Try to mark restaurant that does not exist as tried
+          contractPath: /restaurants/Trattoria Napoli/tried
       responses:
         204:
           description: Marked as tried
+          x-contracts:
+            - contractId: 1
         404:
           description: Restaurant with given name not found
+          x-contracts:
+            - contractId: 2
     delete:
       summary: Mark restaurant as not tried
       operationId: markRestaurantAsNotTried
       description: Additionally removes the review and rating from the restaurant entry
       tags: [Restaurant entry]
+      x-contracts:
+        - contractId: 1
+          name: Successfully mark the restaurant as not tried
+          contractPath: /restaurants/KFC City Centre/tried
+        - contractId: 2
+          name: Try to mark restaurant that does not exist as not tried
+          contractPath: /restaurants/Trattoria Napoli/tried
       responses:
         204:
           description: Marked as not tried
+          x-contracts:
+            - contractId: 1
         404:
           description: Restaurant with given name not found
+          x-contracts:
+            - contractId: 2
   /restaurants/{restaurantName}/categories:
     parameters:
       - $ref: '#/components/parameters/path.RestaurantName'
