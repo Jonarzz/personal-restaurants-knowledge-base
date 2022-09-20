@@ -148,7 +148,7 @@ class RestaurantController implements RestaurantsApi {
                                                                AddRestaurantCategoryRequest categoryRequest) {
         return switch (restaurantService.fetch(restaurantName)) {
             case Found found -> found.then(restaurant -> {
-                var categoryToAdd = categoryRequest.getName();
+                var categoryToAdd = categoryRequest.getCategory();
                 var categories = new HashSet<>(restaurant.categories());
                 if (!categories.contains(categoryToAdd)) {
                     categories.add(categoryToAdd);

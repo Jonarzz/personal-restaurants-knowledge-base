@@ -25,7 +25,7 @@ class RestaurantEntryContractTestBase {
 
         @Bean
         RestaurantService responseProvider() {
-            return RestaurantServiceMockProvider.get();
+            return RestaurantServiceMock.MOCK_INSTANCE;
         }
 
     }
@@ -41,4 +41,8 @@ class RestaurantEntryContractTestBase {
                              .setAuthentication(new TestingAuthenticationToken(TEST_USER, null));
     }
 
+    @AfterAll
+    static void afterAll() {
+        RestaurantServiceMockVerifier.verifyCategoryInteractions();
+    }
 }
