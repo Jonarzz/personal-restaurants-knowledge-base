@@ -97,11 +97,11 @@ class RestaurantServiceTest {
     @Order(10)
     void findByUserIdAndName_emptyTable() {
         assertThat(restaurantService.fetch(NOT_TRIED_RESTAURANT_NAME))
-                .isInstanceOf(FetchResult.NotFound.class);
+                .isEmpty();
         assertThat(restaurantService.fetch(TRIED_RESTAURANT_NAME))
-                .isInstanceOf(FetchResult.NotFound.class);
+                .isEmpty();
         assertThat(restaurantService.fetch(TRIED_RESTAURANT_RENAMED))
-                .isInstanceOf(FetchResult.NotFound.class);
+                .isEmpty();
     }
 
     @Test
@@ -379,7 +379,7 @@ class RestaurantServiceTest {
         actOn(restaurantName, restaurantService::delete);
 
         assertThat(restaurantService.fetch(restaurantName))
-                .isInstanceOf(FetchResult.NotFound.class);
+                .isEmpty();
     }
 
     @Test
@@ -393,7 +393,7 @@ class RestaurantServiceTest {
 
         assertThat(restaurantService.fetch(oldName))
                 .as("Restaurant fetched by old name")
-                .isInstanceOf(FetchResult.NotFound.class);
+                .isEmpty();
         assertRestaurantFound(newName)
                 .returns(TEST_USER, RestaurantItem::userId)
                 .returns(newName, RestaurantItem::restaurantName)
@@ -502,18 +502,16 @@ class RestaurantServiceTest {
     }
 
     private void actOn(String restaurantName, Consumer<RestaurantItem> action) {
-        if (!(restaurantService.fetch(restaurantName)
-                instanceof FetchResult.Found found)) {
-            throw new IllegalStateException("Not found restaurant with name " + restaurantName);
-        }
-        found.then(action);
+        var restaurant = restaurantService.fetch(restaurantName)
+                                          .orElseThrow(() -> new IllegalStateException("Not found restaurant with name "
+                                                                                       + restaurantName));
+        action.accept(restaurant);
     }
 
     private ObjectAssert<RestaurantItem> assertRestaurantFound(String restaurantName) {
         return assertThat(restaurantService.fetch(restaurantName))
                 .as("Restaurant with name: " + restaurantName)
-                .isInstanceOf(FetchResult.Found.class)
-                .extracting("restaurant", type(RestaurantItem.class));
+                .get(type(RestaurantItem.class));
     }
 
     private static void assertNotTriedRestaurantInitial(ObjectAssert<RestaurantItem> restaurant) {

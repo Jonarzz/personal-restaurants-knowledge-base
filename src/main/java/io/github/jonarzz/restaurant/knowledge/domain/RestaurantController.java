@@ -1,6 +1,5 @@
 package io.github.jonarzz.restaurant.knowledge.domain;
 
-import static io.github.jonarzz.restaurant.knowledge.domain.FetchResult.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.ResponseEntity.*;
@@ -10,13 +9,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.*;
 import java.util.*;
+import java.util.function.*;
 import java.util.stream.*;
 
 import io.github.jonarzz.restaurant.knowledge.api.*;
 import io.github.jonarzz.restaurant.knowledge.model.*;
 
 @RestController
-// @PreAuthorize("isAuthenticated()")
+        // @PreAuthorize("isAuthenticated()")
 class RestaurantController implements RestaurantsApi {
 
     private static final String PATH = "/restaurants";
@@ -29,10 +29,7 @@ class RestaurantController implements RestaurantsApi {
 
     @Override
     public ResponseEntity<RestaurantData> getRestaurantDetails(String restaurantName) {
-        return switch (restaurantService.fetch(restaurantName)) {
-            case Found found -> found.then(RestaurantItem::data);
-            case NotFound notFound -> notFound.response();
-        };
+        return actOnFound(restaurantName, restaurant -> ok(restaurant.data()));
     }
 
     @Override
@@ -59,78 +56,65 @@ class RestaurantController implements RestaurantsApi {
     @Override
     public ResponseEntity<Void> createRestaurant(RestaurantData restaurant) {
         var restaurantName = restaurant.getName();
-        return switch (restaurantService.fetch(restaurantName)) {
-            case Found found -> found.thenReturn(ignored -> status(CONFLICT).build());
-            case NotFound notFound -> notFound.then(() -> {
-                restaurantService.create(RestaurantItem.from(restaurant));
-                return created(URI.create(
-                        PATH + "/" + URLEncoder.encode(restaurantName, UTF_8)
-                )).build();
-            });
-        };
+        return restaurantService.fetch(restaurantName)
+                                .map(ignored -> status(CONFLICT).<Void>build())
+                                .orElseGet(() -> {
+                                    restaurantService.create(RestaurantItem.from(restaurant));
+                                    return created(URI.create(
+                                            PATH + "/" + URLEncoder.encode(restaurantName, UTF_8)
+                                    )).build();
+                                });
     }
 
     @Override
     public ResponseEntity<Void> renameRestaurant(String restaurantName,
                                                  RenameRestaurantRequest renameRequest) {
-        return switch (restaurantService.fetch(restaurantName)) {
-            case NotFound notFound -> notFound.response();
-            case Found found -> found.thenReturn(restaurant -> {
-                var newName = renameRequest.getName();
-                if (restaurant.restaurantName().equals(newName)) {
-                    return noContent().build();
-                }
-                return switch (restaurantService.fetch(newName)) {
-                    case Found foundNew -> foundNew.thenReturn(ignored -> status(CONFLICT).build());
-                    case NotFound notFoundNew -> notFoundNew.then(() -> {
-                        restaurantService.rename(restaurant, newName);
-                        return noContent().build();
-                    });
-                };
-            });
-        };
+        return actOnFound(restaurantName, restaurant -> {
+            var newName = renameRequest.getName();
+            if (restaurant.restaurantName().equals(newName)) {
+                return noContent().build();
+            }
+            return restaurantService.fetch(newName)
+                                    .map(ignored -> status(CONFLICT).<Void>build())
+                                    .orElseGet(() -> {
+                                        restaurantService.rename(restaurant, newName);
+                                        return noContent().build();
+                                    });
+        });
     }
 
     @Override
     public ResponseEntity<Void> deleteRestaurant(String restaurantName) {
-        return switch (restaurantService.fetch(restaurantName)) {
-            case Found found -> found.then(restaurant -> {
-                restaurantService.delete(restaurant);
-            });
-            case NotFound notFound -> notFound.response();
-        };
+        return actOnFound(restaurantName, restaurant -> {
+            restaurantService.delete(restaurant);
+            return noContent().build();
+        });
     }
 
     @Override
     public ResponseEntity<Void> updateRestaurantRating(String restaurantName,
                                                        UpdateRestaurantRatingRequest ratingRequest) {
-        return switch (restaurantService.fetch(restaurantName)) {
-            case Found found -> found.then(restaurant -> {
-                restaurantService.setRating(restaurant, ratingRequest.getRating());
-            });
-            case NotFound notFound -> notFound.response();
-        };
+        return actOnFound(restaurantName, restaurant -> {
+            restaurantService.setRating(restaurant, ratingRequest.getRating());
+            return noContent().build();
+        });
     }
 
     @Override
     public ResponseEntity<Void> updateRestaurantReview(String restaurantName,
                                                        UpdateRestaurantReviewRequest reviewRequest) {
-        return switch (restaurantService.fetch(restaurantName)) {
-            case Found found -> found.then(restaurant -> {
-                restaurantService.setReview(restaurant, reviewRequest.getReview());
-            });
-            case NotFound notFound -> notFound.response();
-        };
+        return actOnFound(restaurantName, restaurant -> {
+            restaurantService.setReview(restaurant, reviewRequest.getReview());
+            return noContent().build();
+        });
     }
 
     @Override
     public ResponseEntity<Void> deleteRestaurantReview(String restaurantName) {
-        return switch (restaurantService.fetch(restaurantName)) {
-            case Found found -> found.then(restaurant -> {
-                restaurantService.setReview(restaurant, null);
-            });
-            case NotFound notFound -> notFound.response();
-        };
+        return actOnFound(restaurantName, restaurant -> {
+            restaurantService.setReview(restaurant, null);
+            return noContent().build();
+        });
     }
 
     @Override
@@ -146,56 +130,46 @@ class RestaurantController implements RestaurantsApi {
     @Override
     public ResponseEntity<Set<Category>> addRestaurantCategory(String restaurantName,
                                                                AddRestaurantCategoryRequest categoryRequest) {
-        return switch (restaurantService.fetch(restaurantName)) {
-            case Found found -> found.then(restaurant -> {
-                var categoryToAdd = categoryRequest.getCategory();
-                var categories = new HashSet<>(restaurant.categories());
-                if (!categories.contains(categoryToAdd)) {
-                    categories.add(categoryToAdd);
-                    restaurantService.replaceCategories(restaurant, categories);
-                }
-                return categories;
-            });
-            case NotFound notFound -> notFound.response();
-        };
+        return actOnFound(restaurantName, restaurant -> {
+            var categoryToAdd = categoryRequest.getCategory();
+            var categories = new HashSet<>(restaurant.categories());
+            if (!categories.contains(categoryToAdd)) {
+                categories.add(categoryToAdd);
+                restaurantService.replaceCategories(restaurant, categories);
+            }
+            return ok(categories);
+        });
     }
 
     @Override
     public ResponseEntity<Void> replaceRestaurantCategories(String restaurantName, Set<Category> categories) {
-        return switch (restaurantService.fetch(restaurantName)) {
-            case Found found -> found.then(restaurant -> {
-                restaurantService.replaceCategories(restaurant, categories);
-            });
-            case NotFound notFound -> notFound.response();
-        };
+        return actOnFound(restaurantName, restaurant -> {
+            restaurantService.replaceCategories(restaurant, categories);
+            return noContent().build();
+        });
     }
 
     @Override
     public ResponseEntity<Void> removeRestaurantCategory(String restaurantName, Category category) {
-        return switch (restaurantService.fetch(restaurantName)) {
-            case Found found -> found.then(restaurant -> {
-                if (restaurant.categories().contains(category)) {
-                    var categories = new HashSet<>(restaurant.categories());
-                    categories.remove(category);
-                    restaurantService.replaceCategories(restaurant, categories);
-                }
-            });
-            case NotFound notFound -> notFound.response();
-        };
+        return actOnFound(restaurantName, restaurant -> {
+            if (restaurant.categories().contains(category)) {
+                var categories = new HashSet<>(restaurant.categories());
+                categories.remove(category);
+                restaurantService.replaceCategories(restaurant, categories);
+            }
+            return noContent().build();
+        });
     }
 
     @Override
     public ResponseEntity<List<String>> addRestaurantNote(String restaurantName,
-                                                         AddRestaurantNoteRequest noteRequest) {
-        return switch (restaurantService.fetch(restaurantName)) {
-            case Found found -> found.thenReturn(restaurant -> {
-                var notes = new ArrayList<>(restaurant.notes());
-                notes.add(noteRequest.getNote());
-                restaurantService.replaceNotes(restaurant, notes);
-                return ok(notes);
-            });
-            case NotFound notFound -> notFound.response();
-        };
+                                                          AddRestaurantNoteRequest noteRequest) {
+        return actOnFound(restaurantName, restaurant -> {
+            var notes = new ArrayList<>(restaurant.notes());
+            notes.add(noteRequest.getNote());
+            restaurantService.replaceNotes(restaurant, notes);
+            return ok(notes);
+        });
     }
 
     @Override
@@ -204,19 +178,16 @@ class RestaurantController implements RestaurantsApi {
         if (isInvalidIndex(noteIndex)) {
             return badRequest().build();
         }
-        return switch (restaurantService.fetch(restaurantName)) {
-            case Found found -> found.thenReturn(restaurant -> {
-                var currentNotes = restaurant.notes();
-                var notesCount = currentNotes.size();
-                if (notesCount <= noteIndex) {
-                    return badRequest().build();
-                }
-                var notes = splice(currentNotes, noteIndex, addNoteRequest.getNote());
-                restaurantService.replaceNotes(restaurant, notes);
-                return ok(notes);
-            });
-            case NotFound notFound -> notFound.response();
-        };
+        return actOnFound(restaurantName, restaurant -> {
+            var currentNotes = restaurant.notes();
+            var notesCount = currentNotes.size();
+            if (notesCount <= noteIndex) {
+                return badRequest().build();
+            }
+            var notes = splice(currentNotes, noteIndex, addNoteRequest.getNote());
+            restaurantService.replaceNotes(restaurant, notes);
+            return ok(notes);
+        });
     }
 
     @Override
@@ -224,26 +195,29 @@ class RestaurantController implements RestaurantsApi {
         if (isInvalidIndex(noteIndex)) {
             return badRequest().build();
         }
-        return switch (restaurantService.fetch(restaurantName)) {
-            case Found found -> found.then(restaurant -> {
-                var currentNotes = restaurant.notes();
-                var notesCount = currentNotes.size();
-                if (notesCount > noteIndex) {
-                    var notes = splice(currentNotes, noteIndex);
-                    restaurantService.replaceNotes(restaurant, notes);
-                }
-            });
-            case NotFound notFound -> notFound.response();
-        };
+        return actOnFound(restaurantName, restaurant -> {
+            var currentNotes = restaurant.notes();
+            var notesCount = currentNotes.size();
+            if (notesCount > noteIndex) {
+                var notes = splice(currentNotes, noteIndex);
+                restaurantService.replaceNotes(restaurant, notes);
+            }
+            return noContent().build();
+        });
     }
 
     private ResponseEntity<Void> changeTriedFlag(String restaurantName, boolean tried) {
-        return switch (restaurantService.fetch(restaurantName)) {
-            case Found found -> found.then(restaurant -> {
-                restaurantService.setTriedBefore(restaurant, tried);
-            });
-            case NotFound notFound -> notFound.response();
-        };
+        return actOnFound(restaurantName, restaurant -> {
+            restaurantService.setTriedBefore(restaurant, tried);
+            return noContent().build();
+        });
+    }
+
+    private <T> ResponseEntity<T> actOnFound(String restaurantName,
+                                             Function<RestaurantItem, ResponseEntity<T>> action) {
+        return restaurantService.fetch(restaurantName)
+                                .map(action)
+                                .orElseGet(() -> notFound().build());
     }
 
     @SafeVarargs

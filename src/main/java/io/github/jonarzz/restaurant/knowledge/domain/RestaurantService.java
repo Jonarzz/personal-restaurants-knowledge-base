@@ -6,7 +6,7 @@ import io.github.jonarzz.restaurant.knowledge.model.*;
 
 interface RestaurantService {
 
-    FetchResult fetch(String restaurantName);
+    Optional<RestaurantItem> fetch(String restaurantName);
 
     List<RestaurantItem> query(RestaurantQueryCriteria criteria);
 

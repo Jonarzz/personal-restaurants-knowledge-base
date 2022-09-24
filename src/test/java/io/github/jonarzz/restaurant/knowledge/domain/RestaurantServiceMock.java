@@ -47,11 +47,11 @@ class RestaurantServiceMock {
 
     private static void mockFetch() {
         when(MOCK_INSTANCE.fetch(any()))
-                .thenReturn(new FetchResult.NotFound());
+                .thenReturn(Optional.empty());
         when(MOCK_INSTANCE.fetch(KFC_CITY_CENTRE.restaurantName()))
-                .thenReturn(new FetchResult.Found(KFC_CITY_CENTRE));
+                .thenReturn(Optional.of(KFC_CITY_CENTRE));
         when(MOCK_INSTANCE.fetch(KFC_SOME_STREET.restaurantName()))
-                .thenReturn(new FetchResult.Found(KFC_SOME_STREET));
+                .thenReturn(Optional.of(KFC_SOME_STREET));
     }
 
 }
