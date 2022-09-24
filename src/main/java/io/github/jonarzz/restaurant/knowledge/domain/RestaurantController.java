@@ -185,33 +185,35 @@ class RestaurantController implements RestaurantsApi {
     }
 
     @Override
-    public ResponseEntity<Set<String>> addRestaurantNote(String restaurantName,
+    public ResponseEntity<List<String>> addRestaurantNote(String restaurantName,
                                                          AddRestaurantNoteRequest noteRequest) {
         return switch (restaurantService.fetch(restaurantName)) {
-            case Found found -> found.then(restaurant -> {
+            case Found found -> found.thenReturn(restaurant -> {
                 var notes = new ArrayList<>(restaurant.notes());
                 notes.add(noteRequest.getNote());
                 restaurantService.replaceNotes(restaurant, notes);
+                return ok(notes);
             });
             case NotFound notFound -> notFound.response();
         };
     }
 
     @Override
-    public ResponseEntity<Void> replaceRestaurantNote(String restaurantName, Integer noteIndex,
-                                                      AddRestaurantNoteRequest addNoteRequest) {
+    public ResponseEntity<List<String>> replaceRestaurantNote(String restaurantName, Integer noteIndex,
+                                                              AddRestaurantNoteRequest addNoteRequest) {
         if (isInvalidIndex(noteIndex)) {
-            return ResponseEntity.badRequest()
-                                 .build();
+            return badRequest().build();
         }
         return switch (restaurantService.fetch(restaurantName)) {
-            case Found found -> found.then(restaurant -> {
+            case Found found -> found.thenReturn(restaurant -> {
                 var currentNotes = restaurant.notes();
                 var notesCount = currentNotes.size();
-                if (notesCount > noteIndex) {
-                    var notes = splice(currentNotes, noteIndex, addNoteRequest.getNote());
-                    restaurantService.replaceNotes(restaurant, notes);
+                if (notesCount <= noteIndex) {
+                    return badRequest().build();
                 }
+                var notes = splice(currentNotes, noteIndex, addNoteRequest.getNote());
+                restaurantService.replaceNotes(restaurant, notes);
+                return ok(notes);
             });
             case NotFound notFound -> notFound.response();
         };
@@ -220,8 +222,7 @@ class RestaurantController implements RestaurantsApi {
     @Override
     public ResponseEntity<Void> removeRestaurantNote(String restaurantName, Integer noteIndex) {
         if (isInvalidIndex(noteIndex)) {
-            return ResponseEntity.badRequest()
-                                 .build();
+            return badRequest().build();
         }
         return switch (restaurantService.fetch(restaurantName)) {
             case Found found -> found.then(restaurant -> {
@@ -255,7 +256,7 @@ class RestaurantController implements RestaurantsApi {
     }
 
     private static boolean isInvalidIndex(Integer noteIndex) {
-        return noteIndex == null || noteIndex < 1;
+        return noteIndex == null || noteIndex < 0;
     }
 
 }

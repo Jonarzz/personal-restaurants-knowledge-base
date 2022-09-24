@@ -535,6 +535,13 @@ paths:
       summary: Add a note
       operationId: addRestaurantNote
       tags: [Restaurant entry]
+      x-contracts:
+        - contractId: add-note
+          name: Successfully add note
+          contractPath: /restaurants/KFC City Centre/notes
+        - contractId: try-to-add-note-for-non-existent
+          name: Try to add note for restaurant that does not exist
+          contractPath: /restaurants/Trattoria Napoli/notes
       requestBody:
         required: true
         content:
@@ -546,6 +553,13 @@ paths:
                   type: string
               required:
                 - note
+        x-contracts:
+          - contractId: add-note
+            body:
+              note: Note text to add
+          - contractId: try-to-add-note-for-non-existent
+            body:
+              note: Irrelevant
       responses:
         200:
           description: Note added
@@ -554,11 +568,15 @@ paths:
               schema:
                 type: array
                 minItems: 1
-                uniqueItems: true
                 items:
                   type: string
+          x-contracts:
+            - contractId: add-note
+              body: ['Try to avoid it', 'Note text to add']
         404:
           description: Restaurant with given name not found
+          x-contracts:
+            - contractId: try-to-add-note-for-non-existent
   /restaurants/{restaurantName}/notes/{noteIndex}:
     parameters:
       - $ref: '#/components/parameters/path.RestaurantName'
@@ -571,6 +589,19 @@ paths:
       summary: Replace the note
       operationId: replaceRestaurantNote
       tags: [Restaurant entry]
+      x-contracts:
+        - contractId: replace-note
+          name: Successfully replace note
+          contractPath: /restaurants/KFC City Centre/notes/0
+        - contractId: try-to-replace-note-negative-index
+          name: Try to replace note with negative index
+          contractPath: /restaurants/KFC City Centre/notes/-1
+        - contractId: try-to-replace-note-out-of-bounds
+          name: Try to replace note out of index bounds of existing notes
+          contractPath: /restaurants/KFC City Centre/notes/1
+        - contractId: try-to-replace-note-for-non-existent
+          name: Try to replace note for restaurant that does not exist
+          contractPath: /restaurants/Trattoria Napoli/notes/0
       requestBody:
         required: true
         content:
@@ -582,24 +613,71 @@ paths:
                   type: string
               required:
                 - note
+        x-contracts:
+          - contractId: replace-note
+            body:
+              note: Replaced note text
+          - contractId: try-to-replace-note-negative-index
+            body:
+              note: Irrelevant
+          - contractId: try-to-replace-note-out-of-bounds
+            body:
+              note: Irrelevant
+          - contractId: try-to-replace-note-for-non-existent
+            body:
+              note: Irrelevant
       responses:
-        204:
+        200:
           description: Note replaced
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+          x-contracts:
+            - contractId: replace-note
+              body: ['Replaced note text']
         400:
-          description: Note index is not a positive integer
+          description: Note index is less than 0 or greater than last note index
+          x-contracts:
+            - contractId: try-to-replace-note-negative-index
+            - contractId: try-to-replace-note-out-of-bounds
         404:
           description: Restaurant with given name not found
+          x-contracts:
+            - contractId: try-to-replace-note-for-non-existent
     delete:
       summary: Remove the note
       operationId: removeRestaurantNote
       tags: [Restaurant entry]
+      x-contracts:
+        - contractId: delete-note
+          name: Successfully delete note
+          contractPath: /restaurants/KFC City Centre/notes/0
+        - contractId: try-to-delete-note-out-of-bounds
+          name: Try to delete note out of index bounds of existing notes
+          contractPath: /restaurants/KFC City Centre/notes/1
+        - contractId: try-to-delete-note-negative-index
+          name: Try to delete note with negative index
+          contractPath: /restaurants/KFC City Centre/notes/-1
+        - contractId: try-to-delete-note-for-non-existent
+          name: Try to delete note for restaurant that does not exist
+          contractPath: /restaurants/Trattoria Napoli/notes/0
       responses:
         204:
           description: Note removed
+          x-contracts:
+            - contractId: delete-note
+            - contractId: try-to-delete-note-out-of-bounds
         400:
-          description: Note index is not a positive integer
+          description: Note index is less than 0 or greater than last note index
+          x-contracts:
+            - contractId: try-to-delete-note-negative-index
         404:
           description: Restaurant with given name not found
+          x-contracts:
+            - contractId: try-to-delete-note-for-non-existent
 
 components:
   schemas:

@@ -29,6 +29,7 @@ class RestaurantDynamoDbService implements RestaurantService {
 
     @Override
     public FetchResult fetch(String restaurantName) {
+        // TODO replace with Optional
         return repository.findByKey(new RestaurantKey(restaurantName))
                          .<FetchResult>map(FetchResult.Found::new)
                          .orElseGet(FetchResult.NotFound::new);
