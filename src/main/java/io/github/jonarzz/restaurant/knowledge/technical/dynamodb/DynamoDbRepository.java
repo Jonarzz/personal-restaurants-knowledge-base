@@ -1,10 +1,14 @@
 package io.github.jonarzz.restaurant.knowledge.technical.dynamodb;
 
+import static io.github.jonarzz.restaurant.knowledge.technical.cache.CacheConfig.*;
+
+import org.springframework.cache.annotation.*;
 import software.amazon.awssdk.services.dynamodb.*;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.util.*;
 
+@CacheConfig(cacheNames = RESTAURANTS_CACHE_NAME)
 public class DynamoDbRepository<T extends DynamoDbTable<K>, K extends DynamoDbKey> {
 
     private String tableName;
@@ -17,6 +21,7 @@ public class DynamoDbRepository<T extends DynamoDbTable<K>, K extends DynamoDbKe
         this.client = client;
     }
 
+    @Cacheable
     public Optional<T> findByKey(K key) {
         var request = GetItemRequest.builder()
                                     .tableName(tableName)
@@ -49,6 +54,7 @@ public class DynamoDbRepository<T extends DynamoDbTable<K>, K extends DynamoDbKe
                      .toList();
     }
 
+    @CacheEvict(key = "#item.getKey()")
     public void create(T item) {
         var request = PutItemRequest.builder()
                                     .tableName(tableName)
@@ -58,6 +64,7 @@ public class DynamoDbRepository<T extends DynamoDbTable<K>, K extends DynamoDbKe
         client.putItem(request);
     }
 
+    @CacheEvict(key = "#item.getKey()")
     public void update(T item, Map<String, AttributeValueUpdate> updates) {
         var request = UpdateItemRequest.builder()
                                        .tableName(tableName)
@@ -68,6 +75,7 @@ public class DynamoDbRepository<T extends DynamoDbTable<K>, K extends DynamoDbKe
         client.updateItem(request);
     }
 
+    @CacheEvict(key = "#item.getKey()")
     public void delete(T item) {
         var request = DeleteItemRequest.builder()
                                        .tableName(tableName)

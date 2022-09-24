@@ -15,8 +15,6 @@ import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 class RestaurantDynamoDbService implements RestaurantService {
 
-    // TODO cache
-
     private static final AttributeValueUpdate DELETE_UPDATE = AttributeValueUpdate.builder()
                                                                                   .action(DELETE)
                                                                                   .build();

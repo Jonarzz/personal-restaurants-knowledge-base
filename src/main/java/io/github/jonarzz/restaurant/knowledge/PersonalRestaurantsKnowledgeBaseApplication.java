@@ -7,13 +7,14 @@ import org.springframework.security.config.annotation.web.builders.*;
 import org.springframework.security.config.annotation.web.configuration.*;
 
 import io.github.jonarzz.restaurant.knowledge.domain.*;
+import io.github.jonarzz.restaurant.knowledge.technical.cache.*;
 import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 @Configuration
 @EnableWebSecurity
 @EnableAutoConfiguration
 @Import({
-        DynamoDbConfig.class, RestaurantEntryManagementConfig.class
+        DynamoDbConfig.class, RestaurantEntryManagementConfig.class, CacheConfig.class
 })
 public class PersonalRestaurantsKnowledgeBaseApplication extends WebSecurityConfigurerAdapter {
 

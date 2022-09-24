@@ -4,6 +4,7 @@ import static io.github.jonarzz.restaurant.knowledge.model.Category.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.InstanceOfAssertFactories.*;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.*;
+import static org.mockito.Mockito.*;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.*;
 import static software.amazon.awssdk.regions.Region.*;
 import static software.amazon.awssdk.services.dynamodb.model.KeyType.*;
@@ -16,6 +17,7 @@ import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.boot.test.context.*;
+import org.springframework.boot.test.mock.mockito.*;
 import org.springframework.context.annotation.*;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.context.*;
@@ -32,13 +34,15 @@ import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
 
+import io.github.jonarzz.restaurant.knowledge.technical.cache.*;
 import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 @Testcontainers
 @SpringBootTest(
         webEnvironment = NONE,
         classes = {
-                DynamoDbConfig.class, RestaurantEntryManagementConfig.class, RestaurantServiceTest.Configuration.class
+                DynamoDbConfig.class, RestaurantEntryManagementConfig.class, CacheConfig.class,
+                RestaurantDynamoDbServiceTest.Configuration.class
         }
 )
 @TestPropertySource(properties = {
@@ -47,7 +51,7 @@ import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 })
 @TestInstance(PER_CLASS)
 @TestMethodOrder(OrderAnnotation.class)
-class RestaurantServiceTest {
+class RestaurantDynamoDbServiceTest {
 
     static final String TEST_USER = "test-user";
     static final String TRIED_RESTAURANT_NAME = "Subway";
@@ -78,6 +82,8 @@ class RestaurantServiceTest {
 
     @Autowired
     DynamoDbClient amazonDynamoDb;
+    @SpyBean
+    DynamoDbRepository<RestaurantItem, RestaurantKey> repositorySpy;
 
     @Autowired
     RestaurantService restaurantService;
@@ -89,8 +95,7 @@ class RestaurantServiceTest {
 
     @BeforeEach
     void setUp() {
-        SecurityContextHolder.getContext()
-                             .setAuthentication(new TestingAuthenticationToken(TEST_USER, null));
+        setUpSecurityContext(TEST_USER);
     }
 
     @Test
@@ -154,22 +159,6 @@ class RestaurantServiceTest {
 
     IntStream intRange() {
         return IntStream.rangeClosed(1, FILLER_ENTRIES_COUNT);
-    }
-
-    @Test
-    @Order(30)
-    void findNotTriedByUserIdAndName_afterAddingTwo() {
-        var result = assertRestaurantFound(NOT_TRIED_RESTAURANT_NAME);
-
-        assertNotTriedRestaurantInitial(result);
-    }
-
-    @Test
-    @Order(30)
-    void findTriedByUserIdAndName_afterAddingTwo() {
-        var restaurant = assertRestaurantFound(TRIED_RESTAURANT_NAME);
-
-        assertTriedRestaurantInitial(restaurant);
     }
 
     @Test
@@ -363,6 +352,65 @@ class RestaurantServiceTest {
 
         assertThatThrownBy(queryMethod)
                 .hasMessage("Query criteria cannot be empty");
+    }
+
+    @Test
+    @Order(30)
+    void findNotTriedByUserIdAndName_afterAddingTwo() {
+        var result = assertRestaurantFound(NOT_TRIED_RESTAURANT_NAME);
+
+        assertNotTriedRestaurantInitial(result);
+        // verify that cache was not used
+        verify(repositorySpy)
+                .findByKey(argThat(key -> NOT_TRIED_RESTAURANT_NAME.equals(key.restaurantName())));
+    }
+
+    @Test
+    @Order(30)
+    void findTriedByUserIdAndName_afterAddingTwo() {
+        var restaurant = assertRestaurantFound(TRIED_RESTAURANT_NAME);
+
+        assertTriedRestaurantInitial(restaurant);
+        // verify that cache was not used
+        verify(repositorySpy)
+                .findByKey(argThat(key -> TRIED_RESTAURANT_NAME.equals(key.restaurantName())));
+    }
+
+    @RepeatedTest(5)
+    @Order(35)
+    @SuppressWarnings("unchecked")
+    void findNotTriedByUserIdAndName_cacheShouldBeUsed() {
+        clearInvocations(repositorySpy);
+
+        assertRestaurantFound(NOT_TRIED_RESTAURANT_NAME);
+
+        verifyNoInteractions(repositorySpy);
+    }
+
+    @RepeatedTest(5)
+    @Order(35)
+    @SuppressWarnings("unchecked")
+    void findTriedByUserIdAndName_cacheShouldBeUsed() {
+        clearInvocations(repositorySpy);
+
+        assertRestaurantFound(TRIED_RESTAURANT_NAME);
+
+        verifyNoInteractions(repositorySpy);
+    }
+
+    @Test
+    @Order(35)
+    void tryToFindRestaurantWithDifferentUsed_cacheShouldBeOmitted() {
+        var otherUserName = "other-user";
+        setUpSecurityContext(otherUserName);
+
+        var result = restaurantService.fetch(TRIED_RESTAURANT_NAME);
+
+        assertThat(result)
+                .isEmpty();
+        verify(repositorySpy)
+                .findByKey(argThat(key -> TRIED_RESTAURANT_NAME.equals(key.restaurantName())
+                                          && otherUserName.equals(key.userId())));
     }
 
     @Test
@@ -567,5 +615,10 @@ class RestaurantServiceTest {
                                                                              .writeCapacityUnits(1L)
                                                                              .build())
                                  .build();
+    }
+
+    private static void setUpSecurityContext(String user) {
+        SecurityContextHolder.getContext()
+                             .setAuthentication(new TestingAuthenticationToken(user, null));
     }
 }
