@@ -1,6 +1,6 @@
 package io.github.jonarzz.restaurant.knowledge.domain;
 
-import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Fields.*;
+import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Attributes.*;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.*;
 
 import org.springframework.security.core.context.*;
@@ -12,13 +12,15 @@ import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 record RestaurantKey(
         String userId,
-        String restaurantName
+        String nameLowercase
 ) implements DynamoDbKey {
 
-    RestaurantKey {
+    RestaurantKey(String userId, String nameLowercase) {
         if (userId == null) {
             userId = contextUserId();
         }
+        this.userId = userId;
+        this.nameLowercase = nameLowercase.toLowerCase();
     }
 
     RestaurantKey(String restaurantName) {
@@ -29,7 +31,7 @@ record RestaurantKey(
     public Map<String, AttributeValue> asAttributes() {
         return Map.of(
                 USER_ID, fromS(userId),
-                RESTAURANT_NAME, fromS(restaurantName)
+                NAME_LOWERCASE, fromS(nameLowercase)
         );
     }
 

@@ -189,9 +189,37 @@ class RestaurantDynamoDbServiceTest {
 
     @Test
     @Order(30)
+    void queryByNameStartingWithNotMatchingCase_triedRestaurant() {
+        var criteria = RestaurantQueryCriteria.builder()
+                                              .nameBeginsWith(TRIED_RESTAURANT_NAME.substring(0, 3)
+                                                                                   .toUpperCase())
+                                              .build();
+
+        var result = restaurantService.query(criteria);
+
+        assertTriedRestaurantInitial(assertThat(result)
+                                             .singleElement());
+    }
+
+    @Test
+    @Order(30)
     void queryByNameStartingWith_notTriedRestaurant() {
         var criteria = RestaurantQueryCriteria.builder()
                                               .nameBeginsWith(NOT_TRIED_RESTAURANT_NAME.substring(0, 5))
+                                              .build();
+
+        var result = restaurantService.query(criteria);
+
+        assertNotTriedRestaurantInitial(assertThat(result)
+                                                .singleElement());
+    }
+
+    @Test
+    @Order(30)
+    void queryByNameStartingWithNotMatchingCase_notTriedRestaurant() {
+        var criteria = RestaurantQueryCriteria.builder()
+                                              .nameBeginsWith(NOT_TRIED_RESTAURANT_NAME.substring(0, 5)
+                                                                                       .toUpperCase())
                                               .build();
 
         var result = restaurantService.query(criteria);
@@ -362,7 +390,8 @@ class RestaurantDynamoDbServiceTest {
         assertNotTriedRestaurantInitial(result);
         // verify that cache was not used
         verify(repositorySpy)
-                .findByKey(argThat(key -> NOT_TRIED_RESTAURANT_NAME.equals(key.restaurantName())));
+                .findByKey(argThat(key -> NOT_TRIED_RESTAURANT_NAME.toLowerCase()
+                                                                   .equals(key.nameLowercase())));
     }
 
     @Test
@@ -373,7 +402,8 @@ class RestaurantDynamoDbServiceTest {
         assertTriedRestaurantInitial(restaurant);
         // verify that cache was not used
         verify(repositorySpy)
-                .findByKey(argThat(key -> TRIED_RESTAURANT_NAME.equals(key.restaurantName())));
+                .findByKey(argThat(key -> TRIED_RESTAURANT_NAME.toLowerCase()
+                                                               .equals(key.nameLowercase())));
     }
 
     @RepeatedTest(5)
@@ -409,7 +439,8 @@ class RestaurantDynamoDbServiceTest {
         assertThat(result)
                 .isEmpty();
         verify(repositorySpy)
-                .findByKey(argThat(key -> TRIED_RESTAURANT_NAME.equals(key.restaurantName())
+                .findByKey(argThat(key -> TRIED_RESTAURANT_NAME.toLowerCase()
+                                                               .equals(key.nameLowercase())
                                           && otherUserName.equals(key.userId())));
     }
 
@@ -587,7 +618,7 @@ class RestaurantDynamoDbServiceTest {
 
     private static CreateTableRequest prepareCreateTableRequest() {
         var userIdAttribute = "userId";
-        var restaurantNameAttribute = "restaurantName";
+        var nameLowercaseAttribute = "nameLowercase";
         return CreateTableRequest.builder()
                                  .tableName("Restaurant")
                                  .keySchema(
@@ -596,7 +627,7 @@ class RestaurantDynamoDbServiceTest {
                                                          .keyType(HASH)
                                                          .build(),
                                          KeySchemaElement.builder()
-                                                         .attributeName(restaurantNameAttribute)
+                                                         .attributeName(nameLowercaseAttribute)
                                                          .keyType(RANGE)
                                                          .build()
                                  )
@@ -606,7 +637,7 @@ class RestaurantDynamoDbServiceTest {
                                                             .attributeType(S)
                                                             .build(),
                                          AttributeDefinition.builder()
-                                                            .attributeName(restaurantNameAttribute)
+                                                            .attributeName(nameLowercaseAttribute)
                                                             .attributeType(S)
                                                             .build()
                                  )

@@ -1,6 +1,6 @@
 package io.github.jonarzz.restaurant.knowledge.domain;
 
-import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Fields.*;
+import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Attributes.*;
 import static io.github.jonarzz.restaurant.knowledge.technical.dynamodb.AttributesCreator.*;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeAction.*;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.*;
@@ -32,8 +32,6 @@ class RestaurantDynamoDbService implements RestaurantService {
 
     @Override
     public List<RestaurantItem> query(RestaurantQueryCriteria criteria) {
-        // TODO case insensitive name query
-        //      (save restaurant name lowercase as sort key + actual value as attribute)
         return repository.query(new RestaurantDynamoDbCriteria(criteria));
     }
 

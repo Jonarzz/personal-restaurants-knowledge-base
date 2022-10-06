@@ -1,6 +1,6 @@
 package io.github.jonarzz.restaurant.knowledge.domain;
 
-import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Fields.*;
+import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Attributes.*;
 import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantKey.*;
 import static io.github.jonarzz.restaurant.knowledge.technical.dynamodb.AttributesCreator.*;
 import static java.lang.Boolean.*;
@@ -26,11 +26,12 @@ class RestaurantDynamoDbCriteria implements DynamoDbQueryCriteria {
                                          .comparisonOperator(EQ)
                                          .attributeValueList(fromS(contextUserId()))
                                          .build());
-        if (criteria.nameBeginsWith() != null) {
-            conditions.put(RESTAURANT_NAME, Condition.builder()
-                                                     .comparisonOperator(BEGINS_WITH)
-                                                     .attributeValueList(fromS(criteria.nameBeginsWith()))
-                                                     .build());
+        var nameBeginning = criteria.nameBeginsWith();
+        if (nameBeginning != null) {
+            conditions.put(NAME_LOWERCASE, Condition.builder()
+                                                    .comparisonOperator(BEGINS_WITH)
+                                                    .attributeValueList(fromS(nameBeginning.toLowerCase()))
+                                                    .build());
         }
         return conditions;
     }

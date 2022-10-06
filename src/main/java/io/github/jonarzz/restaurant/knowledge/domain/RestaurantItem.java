@@ -21,9 +21,10 @@ record RestaurantItem(
         @Singular List<String> notes
 ) implements DynamoDbTable<RestaurantKey> {
 
-    static class Fields {
+    static class Attributes {
 
         static final String USER_ID = "userId";
+        static final String NAME_LOWERCASE = "nameLowercase";
         static final String RESTAURANT_NAME = "restaurantName";
         static final String CATEGORIES = "categories";
         static final String TRIED_BEFORE = "triedBefore";
@@ -31,7 +32,7 @@ record RestaurantItem(
         static final String REVIEW = "review";
         static final String NOTES = "notes";
 
-        private Fields() {
+        private Attributes() {
         }
     }
 

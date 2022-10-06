@@ -1,6 +1,6 @@
 package io.github.jonarzz.restaurant.knowledge.domain;
 
-import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Fields.*;
+import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Attributes.*;
 
 import software.amazon.awssdk.services.dynamodb.model.*;
 
@@ -24,12 +24,14 @@ class RestaurantItemMapper implements ItemMapper<RestaurantItem> {
 
     @Override
     public AttributesCreator attributesCreator(RestaurantItem restaurant) {
+        var restaurantName = restaurant.restaurantName();
         return new AttributesCreator()
-                .putIfPresent(USER_ID,         restaurant.userId(),         AttributeValue::fromS)
-                .putIfPresent(RESTAURANT_NAME, restaurant.restaurantName(), AttributeValue::fromS)
-                .putIfPresent(REVIEW,          restaurant.review(),         AttributeValue::fromS)
-                .putIfPresent(RATING,          restaurant.ratingString(),   AttributeValue::fromN)
-                .putIfPresent(TRIED_BEFORE,    restaurant.triedBefore(),    AttributeValue::fromBool)
+                .putIfPresent(USER_ID,         restaurant.userId(),          AttributeValue::fromS)
+                .putIfPresent(NAME_LOWERCASE,  restaurantName.toLowerCase(), AttributeValue::fromS)
+                .putIfPresent(RESTAURANT_NAME, restaurantName,               AttributeValue::fromS)
+                .putIfPresent(REVIEW,          restaurant.review(),          AttributeValue::fromS)
+                .putIfPresent(RATING,          restaurant.ratingString(),    AttributeValue::fromN)
+                .putIfPresent(TRIED_BEFORE,    restaurant.triedBefore(),     AttributeValue::fromBool)
                 .putIfNotEmpty(NOTES,      restaurant.notes())
                 .putIfNotEmpty(CATEGORIES, restaurant.categories(), Category::getValue);
     }
