@@ -1,16 +1,9 @@
-import {Card} from 'antd';
-import 'antd/dist/antd.css';
+import 'antd/dist/antd.dark.css';
 import React from 'react';
+import {RestaurantSearchPage} from './features/restaurant/RestaurantSearchPage';
 
 const App = () => (
-  <>
-    <Card size="small"
-          title="Test card title"
-          style={{width: 300}}
-    >
-      <p>Test card content</p>
-    </Card>
-  </>
+  <RestaurantSearchPage/>
 );
 
 export default App;

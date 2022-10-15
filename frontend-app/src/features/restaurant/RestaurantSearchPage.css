@@ -1,0 +1,7 @@
+.ant-popover ul {
+  list-style-type: none;
+}
+
+.ant-popover li {
+  white-space: pre;
+}
