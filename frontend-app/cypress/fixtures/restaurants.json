@@ -1,0 +1,16 @@
+[{
+  "name":  "Super Tasty Burger",
+  "categories": ["BURGER", "SANDWICH"],
+  "triedBefore":  false
+}, {
+  "name":  "Burger King City Centre",
+  "categories": ["BURGER", "FAST_FOOD"],
+  "triedBefore":  true,
+  "rating": 5,
+  "review":  "Not the greatest burger, but it's all right for a fast food I guess",
+  "notes": [
+    "Whooper has plenty of white onion",
+    "Double cheeseburger is OK for the price",
+    "Fries can be great, but can also be mediocre - it's a lottery"
+  ]
+}]

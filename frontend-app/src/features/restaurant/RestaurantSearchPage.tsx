@@ -68,8 +68,8 @@ const deleteMe = [{
 
 export const RestaurantSearchPage = () => {
 
-  const [restaurants, setRestaurants] = useState<RestaurantData[] | undefined>(JSON.parse(JSON.stringify(deleteMe)));
-  const [modalRestaurant, setModalRestaurant] = useState<RestaurantData | undefined>();
+  const [restaurants, setRestaurants] = useState<RestaurantData[]>();
+  const [modalRestaurant, setModalRestaurant] = useState<RestaurantData>();
   const [triedBeforeInModal, setTriedBeforeInModal] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -173,7 +173,7 @@ export const RestaurantSearchPage = () => {
                  xs={24}>
               <Form.Item>
                 <Button type="primary" htmlType="submit" style={{width: '100%'}}>
-                  Submit
+                  Search
                 </Button>
               </Form.Item>
             </Col>
