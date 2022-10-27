@@ -13,6 +13,33 @@ const DEVICES = {
 
 describe('Restaurant search page', () => {
 
+  const criteria = {
+    nameBeginsWith: 'Burger King',
+    category: 'BURGER',
+    ratingAtLeast: '3',
+  };
+
+  beforeEach(() => {
+    cy.fixture('restaurants')
+      .then(json => {
+        cy.intercept({
+          method: 'GET',
+          pathname: '/restaurants',
+          query: {
+            triedBefore: 'false',
+          },
+        }, json);
+        cy.intercept({
+          method: 'GET',
+          pathname: '/restaurants',
+          query: {
+            ...criteria,
+            triedBefore: 'true',
+          },
+        }, [json[1]]);
+      });
+  });
+
   describe(`Common tests`, () => {
 
     Object.entries(DEVICES)
@@ -52,17 +79,7 @@ describe('Restaurant search page', () => {
       cy.viewport(width, height);
     });
 
-    it('restaurant elements are rendered in table on search', () => {
-      cy.fixture('restaurants').then(json => {
-        cy.intercept({
-          method: 'GET',
-          pathname: '/restaurants',
-          query: {
-            triedBefore: 'false',
-          },
-        }, json);
-      });
-
+    it('restaurant elements are rendered in the table on search without criteria', () => {
       cy.mount(<RestaurantSearchPage/>)
         .get('button[type="submit"]')
         .click();
@@ -77,7 +94,7 @@ describe('Restaurant search page', () => {
       const expectedNotes = [
         `Whooper has plenty of white onion`,
         `Double cheeseburger is OK for the price`,
-        `Fries can be great, but can also be mediocre - it's a lottery`
+        `Fries can be great, but can also be mediocre - it's a lottery`,
       ];
       cy.get('thead > tr > th')
         .should('have.length', expectedHeaderCells.length)
@@ -105,20 +122,8 @@ describe('Restaurant search page', () => {
       cy.viewport(width, height);
     });
 
-    it('restaurant elements are rendered in table on search', () => {
-      const nameBeginsWith = 'Burger King';
-      const category = 'BURGER';
-      const ratingAtLeast = '3';
-      cy.fixture('restaurants').then(json => {
-        cy.intercept({
-          method: 'GET',
-          pathname: '/restaurants',
-          query: {
-            nameBeginsWith, category, ratingAtLeast,
-            triedBefore: 'true',
-          },
-        }, [json[1]]);
-      });
+    it('brief restaurants data is rendered in the table', () => {
+      const {nameBeginsWith, category, ratingAtLeast} = criteria;
 
       cy.mount(<RestaurantSearchPage/>)
         .get('input#nameBeginsWith')
@@ -151,6 +156,38 @@ describe('Restaurant search page', () => {
       cy.get('tbody > tr > td')
         .should('have.length', expectedCells.length)
         .each((cell, index) => expect(cell.text()).to.be.equal(expectedCells[index]));
+    });
+
+    it('full restaurants data is available in modal after click', () => {
+      cy.mount(<RestaurantSearchPage/>)
+        .get('button[type="submit"]')
+        .click();
+
+      cy.get('td > button')
+        .first()
+        .click()
+        .get('.ant-modal-header > .ant-modal-title')
+        .should('have.text', 'Super Tasty Burger')
+        .get('.ant-modal-body input#name')
+        .should('have.value', 'Super Tasty Burger')
+        .get('.ant-modal-body .ant-select-selection-item-content')
+        .should('contain.text', 'Burger', 'Sandwich')
+        .get('.ant-modal-body .ant-switch-inner')
+        .should('have.text', 'Not tried before')
+        .get('.ant-modal-body input#rating')
+        .should('not.have.value')
+        .should('be.disabled')
+        .get('.ant-modal-body textarea#review')
+        .should('not.have.value')
+        .should('be.disabled')
+        .should('have.attr', 'placeholder', 'Review')
+        .get('.ant-modal-body textarea#notes')
+        .should('not.have.value')
+        .should('not.be.disabled')
+        .should('have.attr', 'placeholder', 'Notes (separated with newlines)')
+        .get('.ant-modal-footer')
+        .contains('Cancel')
+        .click();
     });
 
     // TODO test restaurant editing and details on mobile (same modal)

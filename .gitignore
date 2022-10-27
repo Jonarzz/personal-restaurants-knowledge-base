@@ -11,3 +11,6 @@ build/
 node_modules/
 
 secrets.yaml
+
+frontend-app/cypress/screenshots
+frontend-app/cypress/videos
