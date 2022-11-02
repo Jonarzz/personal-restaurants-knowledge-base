@@ -76,6 +76,11 @@ public class DynamoDbRepository<T extends DynamoDbTable<K>, K extends DynamoDbKe
     }
 
     @CacheEvict(key = "#item.getKey()")
+    public void update(T item, AttributesCreator attributesCreator) {
+        update(item, attributesCreator.toUpdateAttributes());
+    }
+
+    @CacheEvict(key = "#item.getKey()")
     public void delete(T item) {
         var request = DeleteItemRequest.builder()
                                        .tableName(tableName)

@@ -5,6 +5,8 @@ import static org.mockito.Mockito.*;
 
 import java.util.*;
 
+import io.github.jonarzz.restaurant.knowledge.model.*;
+
 class RestaurantServiceMock {
 
     static final RestaurantDynamoDbService MOCK_INSTANCE = mock(RestaurantDynamoDbService.class);
@@ -29,6 +31,7 @@ class RestaurantServiceMock {
     static {
         mockFetch();
         mockQuery();
+        mockUpdate();
     }
 
     private RestaurantServiceMock() {
@@ -52,6 +55,20 @@ class RestaurantServiceMock {
                 .thenReturn(Optional.of(KFC_CITY_CENTRE));
         when(MOCK_INSTANCE.fetch(KFC_SOME_STREET.restaurantName()))
                 .thenReturn(Optional.of(KFC_SOME_STREET));
+    }
+
+    private static void mockUpdate() {
+        when(MOCK_INSTANCE.update(any(), any()))
+                .thenAnswer(invocation -> {
+                    RestaurantItem restaurant = invocation.getArgument(0);
+                    RestaurantData updateData = invocation.getArgument(1);
+                    var changes = new RestaurantModification(restaurant, updateData)
+                            .changes();
+                    if (changes.empty()) {
+                        return Optional.empty();
+                    }
+                    return Optional.of(changes.applied());
+                });
     }
 
 }

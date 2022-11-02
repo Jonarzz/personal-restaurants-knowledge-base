@@ -34,6 +34,7 @@ import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
 
+import io.github.jonarzz.restaurant.knowledge.model.*;
 import io.github.jonarzz.restaurant.knowledge.technical.cache.*;
 import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
@@ -466,9 +467,11 @@ class RestaurantDynamoDbServiceTest {
     void renameRestaurant() {
         var oldName = TRIED_RESTAURANT_NAME;
         var newName = TRIED_RESTAURANT_RENAMED;
+        var updateData = new RestaurantData()
+                .name(newName);
 
         actOn(oldName,
-              restaurant -> restaurantService.rename(restaurant, newName));
+              restaurant -> restaurantService.update(restaurant, updateData));
 
         assertThat(restaurantService.fetch(oldName))
                 .as("Restaurant fetched by old name")
@@ -485,6 +488,8 @@ class RestaurantDynamoDbServiceTest {
                         "Don't go too heavy on the veggies"
                 ), RestaurantItem::notes);
     }
+
+    // TODO test full update (all attributes) with and without renaming
 
     @Test
     @Order(50)

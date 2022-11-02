@@ -12,9 +12,9 @@ interface RestaurantService {
 
     void create(RestaurantItem item);
 
-    void delete(RestaurantItem restaurantItem);
+    Optional<RestaurantItem> update(RestaurantItem restaurant, RestaurantData updateData);
 
-    void rename(RestaurantItem restaurant, String newName);
+    void delete(RestaurantItem restaurantItem);
 
     void setRating(RestaurantItem restaurant, int rating);
 

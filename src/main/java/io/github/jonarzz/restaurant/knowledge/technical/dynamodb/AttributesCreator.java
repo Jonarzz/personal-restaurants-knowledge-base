@@ -70,4 +70,13 @@ public class AttributesCreator {
     Map<String, AttributeValue> toAttributes() {
         return attributes;
     }
+
+    Map<String, AttributeValueUpdate> toUpdateAttributes() {
+        return attributes.entrySet()
+                         .stream()
+                         .collect(toMap(Map.Entry::getKey,
+                                        entry -> AttributeValueUpdate.builder()
+                                                                     .value(entry.getValue())
+                                                                     .build()));
+    }
 }

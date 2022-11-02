@@ -67,19 +67,18 @@ class RestaurantController implements RestaurantsApi {
     }
 
     @Override
-    public ResponseEntity<Void> renameRestaurant(String restaurantName,
-                                                 RenameRestaurantRequest renameRequest) {
+    public ResponseEntity<RestaurantData> updateRestaurant(String restaurantName,
+                                                           RestaurantData newData) {
         return actOnFound(restaurantName, restaurant -> {
-            var newName = renameRequest.getName();
-            if (restaurant.restaurantName().equals(newName)) {
-                return noContent().build();
+            var newName = newData.getName();
+            if (!restaurantName.equals(newName) && restaurantService.fetch(newName)
+                                                                    .isPresent()) {
+                return status(CONFLICT).build();
             }
-            return restaurantService.fetch(newName)
-                                    .map(ignored -> status(CONFLICT).<Void>build())
-                                    .orElseGet(() -> {
-                                        restaurantService.rename(restaurant, newName);
-                                        return noContent().build();
-                                    });
+            return restaurantService.update(restaurant, newData)
+                                    .map(RestaurantItem::data)
+                                    .map(ResponseEntity::ok)
+                                    .orElseGet(() -> status(NO_CONTENT).build());
         });
     }
 

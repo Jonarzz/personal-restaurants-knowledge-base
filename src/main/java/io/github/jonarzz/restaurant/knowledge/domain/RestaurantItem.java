@@ -73,18 +73,6 @@ record RestaurantItem(
                 .notes(notes);
     }
 
-    RestaurantItem renamedTo(String newName) {
-        return RestaurantItem.builder()
-                             .restaurantName(newName)
-                             .userId(userId)
-                             .categories(categories)
-                             .triedBefore(triedBefore)
-                             .rating(rating)
-                             .review(review)
-                             .notes(notes)
-                             .build();
-    }
-
     RestaurantItem markedAsTriedBefore() {
         return RestaurantItem.builder()
                              .triedBefore(true)

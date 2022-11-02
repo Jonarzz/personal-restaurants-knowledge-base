@@ -1,6 +1,7 @@
 package io.github.jonarzz.restaurant.knowledge.domain;
 
 import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Attributes.*;
+import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantModification.*;
 import static io.github.jonarzz.restaurant.knowledge.technical.dynamodb.AttributesCreator.*;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeAction.*;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.*;
@@ -45,14 +46,25 @@ class RestaurantDynamoDbService implements RestaurantService {
     }
 
     @Override
-    public void delete(RestaurantItem restaurantItem) {
-        repository.delete(restaurantItem);
+    public Optional<RestaurantItem> update(RestaurantItem restaurant, RestaurantData updateData) {
+        var modification = updateItem(restaurant).with(updateData);
+        var changes = modification.changes();
+        if (changes.empty()) {
+            return Optional.empty();
+        }
+        var updatedItem = changes.applied();
+        if (modification.hasNewKey()) {
+            create(updatedItem);
+            delete(restaurant);
+        } else {
+            repository.update(restaurant, changes.toAttributesCreator());
+        }
+        return Optional.of(updatedItem);
     }
 
     @Override
-    public void rename(RestaurantItem restaurant, String newName) {
-        create(restaurant.renamedTo(newName));
-        delete(restaurant);
+    public void delete(RestaurantItem restaurantItem) {
+        repository.delete(restaurantItem);
     }
 
     @Override
