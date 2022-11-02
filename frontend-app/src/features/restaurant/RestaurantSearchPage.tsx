@@ -2,7 +2,7 @@ import {CheckOutlined, CloseOutlined} from '@ant-design/icons';
 import {Button, Card, Col, Form, Input, Modal, Popover, Row, Select, Switch, Table} from 'antd';
 import {Breakpoint} from 'antd/es/_util/responsiveObserve';
 import React, {useEffect, useState} from 'react';
-import {Category, RestaurantData} from '../../api';
+import {Category, RestaurantData, RestaurantEntryApi} from '../../api';
 import {restaurantsApi} from '../../api/ApiFacade';
 import './RestaurantSearchPage.css';
 
@@ -48,24 +48,6 @@ const createPopover = (popoverContent: any) => (
   </Popover>
 );
 
-// TODO delete after dev
-const deleteMe = [{
-  'name': 'Super Tasty Burger',
-  'categories': ['BURGER', 'SANDWICH'],
-  'triedBefore': false,
-}, {
-  'name': 'Burger King City Centre',
-  'categories': ['BURGER', 'FAST_FOOD'],
-  'triedBefore': true,
-  'rating': 5,
-  'review': 'Not the greatest burger, but it\'s all right for a fast food I guess',
-  'notes': [
-    'Whooper has plenty of white onion',
-    'Double cheeseburger is OK for the price',
-    'Fries can be great, but can also be mediocre - it\'s a lottery',
-  ],
-}];
-
 export const RestaurantSearchPage = () => {
 
   const [restaurants, setRestaurants] = useState<RestaurantData[]>();
@@ -108,6 +90,7 @@ export const RestaurantSearchPage = () => {
       console.error('Unknown category: ' + category);
       return null;
     }).filter(e => e).join(', '),
+    responsive: ['sm' as Breakpoint],
   }, {
     title: 'Tried before',
     dataIndex: 'triedBefore',
@@ -116,7 +99,6 @@ export const RestaurantSearchPage = () => {
   }, {
     title: 'Rating',
     dataIndex: 'rating',
-    responsive: ['sm' as Breakpoint],
   }, {
     title: 'Review',
     dataIndex: 'review',
@@ -201,7 +183,20 @@ export const RestaurantSearchPage = () => {
                  setModalOpen(false);
                }}>
           <Form form={modalForm}
-                onFinish={values => console.log('Saving', values)}
+                onFinish={values => {
+                  if (!modalRestaurant?.name) {
+                    return;
+                  }
+                  // TODO refactor and use the response to update the state
+                  new RestaurantEntryApi()
+                    .updateRestaurant(modalRestaurant.name, {
+                      ...values,
+                      notes: values.notes.split('\n')
+                    })
+                    .then(response => {
+                      console.log(response);
+                    });
+                }}
                 onValuesChange={(changedFields: any) => {
                   if (!changedFields.hasOwnProperty('triedBefore')) {
                     return;

@@ -76,19 +76,6 @@ export type Category = typeof Category[keyof typeof Category];
 /**
  * 
  * @export
- * @interface RenameRestaurantRequest
- */
-export interface RenameRestaurantRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof RenameRestaurantRequest
-     */
-    'name': string;
-}
-/**
- * 
- * @export
  * @interface RestaurantData
  */
 export interface RestaurantData {
@@ -490,46 +477,6 @@ export const RestaurantEntryApiAxiosParamCreator = function (configuration?: Con
         },
         /**
          * 
-         * @summary Rename the restaurant
-         * @param {string} restaurantName 
-         * @param {RenameRestaurantRequest} renameRestaurantRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        renameRestaurant: async (restaurantName: string, renameRestaurantRequest: RenameRestaurantRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'restaurantName' is not null or undefined
-            assertParamExists('renameRestaurant', 'restaurantName', restaurantName)
-            // verify required parameter 'renameRestaurantRequest' is not null or undefined
-            assertParamExists('renameRestaurant', 'renameRestaurantRequest', renameRestaurantRequest)
-            const localVarPath = `/restaurants/{restaurantName}`
-                .replace(`{${"restaurantName"}}`, encodeURIComponent(String(restaurantName)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(renameRestaurantRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
          * @summary Replace categories
          * @param {string} restaurantName 
          * @param {Set<Category>} category 
@@ -606,6 +553,46 @@ export const RestaurantEntryApiAxiosParamCreator = function (configuration?: Con
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(addRestaurantNoteRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Update the restaurant
+         * @param {string} restaurantName 
+         * @param {RestaurantData} restaurantData 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateRestaurant: async (restaurantName: string, restaurantData: RestaurantData, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'restaurantName' is not null or undefined
+            assertParamExists('updateRestaurant', 'restaurantName', restaurantName)
+            // verify required parameter 'restaurantData' is not null or undefined
+            assertParamExists('updateRestaurant', 'restaurantData', restaurantData)
+            const localVarPath = `/restaurants/{restaurantName}`
+                .replace(`{${"restaurantName"}}`, encodeURIComponent(String(restaurantName)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(restaurantData, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -807,18 +794,6 @@ export const RestaurantEntryApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @summary Rename the restaurant
-         * @param {string} restaurantName 
-         * @param {RenameRestaurantRequest} renameRestaurantRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async renameRestaurant(restaurantName: string, renameRestaurantRequest: RenameRestaurantRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.renameRestaurant(restaurantName, renameRestaurantRequest, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * 
          * @summary Replace categories
          * @param {string} restaurantName 
          * @param {Set<Category>} category 
@@ -840,6 +815,18 @@ export const RestaurantEntryApiFp = function(configuration?: Configuration) {
          */
         async replaceRestaurantNote(restaurantName: string, noteIndex: number, addRestaurantNoteRequest: AddRestaurantNoteRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<string>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.replaceRestaurantNote(restaurantName, noteIndex, addRestaurantNoteRequest, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * 
+         * @summary Update the restaurant
+         * @param {string} restaurantName 
+         * @param {RestaurantData} restaurantData 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateRestaurant(restaurantName: string, restaurantData: RestaurantData, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RestaurantData>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateRestaurant(restaurantName, restaurantData, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -972,17 +959,6 @@ export const RestaurantEntryApiFactory = function (configuration?: Configuration
         },
         /**
          * 
-         * @summary Rename the restaurant
-         * @param {string} restaurantName 
-         * @param {RenameRestaurantRequest} renameRestaurantRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        renameRestaurant(restaurantName: string, renameRestaurantRequest: RenameRestaurantRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.renameRestaurant(restaurantName, renameRestaurantRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
          * @summary Replace categories
          * @param {string} restaurantName 
          * @param {Set<Category>} category 
@@ -1003,6 +979,17 @@ export const RestaurantEntryApiFactory = function (configuration?: Configuration
          */
         replaceRestaurantNote(restaurantName: string, noteIndex: number, addRestaurantNoteRequest: AddRestaurantNoteRequest, options?: any): AxiosPromise<Array<string>> {
             return localVarFp.replaceRestaurantNote(restaurantName, noteIndex, addRestaurantNoteRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Update the restaurant
+         * @param {string} restaurantName 
+         * @param {RestaurantData} restaurantData 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateRestaurant(restaurantName: string, restaurantData: RestaurantData, options?: any): AxiosPromise<RestaurantData> {
+            return localVarFp.updateRestaurant(restaurantName, restaurantData, options).then((request) => request(axios, basePath));
         },
         /**
          * Additionally marks the restaurant as tried
@@ -1150,19 +1137,6 @@ export class RestaurantEntryApi extends BaseAPI {
 
     /**
      * 
-     * @summary Rename the restaurant
-     * @param {string} restaurantName 
-     * @param {RenameRestaurantRequest} renameRestaurantRequest 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof RestaurantEntryApi
-     */
-    public renameRestaurant(restaurantName: string, renameRestaurantRequest: RenameRestaurantRequest, options?: AxiosRequestConfig) {
-        return RestaurantEntryApiFp(this.configuration).renameRestaurant(restaurantName, renameRestaurantRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
      * @summary Replace categories
      * @param {string} restaurantName 
      * @param {Set<Category>} category 
@@ -1186,6 +1160,19 @@ export class RestaurantEntryApi extends BaseAPI {
      */
     public replaceRestaurantNote(restaurantName: string, noteIndex: number, addRestaurantNoteRequest: AddRestaurantNoteRequest, options?: AxiosRequestConfig) {
         return RestaurantEntryApiFp(this.configuration).replaceRestaurantNote(restaurantName, noteIndex, addRestaurantNoteRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Update the restaurant
+     * @param {string} restaurantName 
+     * @param {RestaurantData} restaurantData 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof RestaurantEntryApi
+     */
+    public updateRestaurant(restaurantName: string, restaurantData: RestaurantData, options?: AxiosRequestConfig) {
+        return RestaurantEntryApiFp(this.configuration).updateRestaurant(restaurantName, restaurantData, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

@@ -68,6 +68,57 @@ describe('Restaurant search page', () => {
                   .should('not.exist');
               });
 
+              it('restaurant not visited before edited after trying out', () => {
+              // TODO extract cypress commands
+                const name = 'Super Tasty Burger';
+                const triedBefore = true;
+                const rating = 7;
+                const review = 'This is a test review';
+                const notes = ['This is the first note', 'This is the second note', 'And this is the third note'];
+                const categories = ['BURGER', 'SANDWICH'];
+                cy.intercept('PATCH', '/restaurants/' + encodeURIComponent(name), req => {
+                  req.reply({ name, triedBefore, rating, review, notes, categories })
+                }).as('restaurantUpdate')
+
+                cy.mount(<RestaurantSearchPage/>)
+                  .get('button[type="submit"]')
+                  .click();
+
+                cy.get('td > button')
+                  .contains(name)
+                  .click();
+                cy.get('.ant-modal-body .ant-switch-inner')
+                  .click();
+                for (let i = 1; i <= 10; i++) {
+                  cy.get('.ant-modal-body input#rating')
+                    .parents('.ant-select-selector')
+                    .click()
+                    .get('.ant-select-item')
+                    .contains('' + i)
+                    .click();
+                }
+                cy.get('.ant-modal-body input#rating')
+                  .parents('.ant-select-selector')
+                  .click()
+                  .get('.ant-select-item')
+                  .contains('' + rating)
+                  .click();
+                cy.get('.ant-modal-body textarea#review')
+                  .type(review)
+                  .get('.ant-modal-body textarea#notes')
+                  .type(notes.join('\n'));
+                cy.get('.ant-modal-footer')
+                  .contains('Update')
+                  .click();
+
+                cy.wait('@restaurantUpdate')
+                  .then(interception => {
+                    assert.deepEqual(interception.request.body, {
+                      name, triedBefore, rating, review, notes, categories
+                    });
+                  });
+              });
+
             });
           });
   });
@@ -145,13 +196,13 @@ describe('Restaurant search page', () => {
         .click();
 
       const expectedHeaderCells = [
-        'Name', 'Categories',
+        'Name', 'Rating',
       ];
       cy.get('thead > tr > th')
         .should('have.length', expectedHeaderCells.length)
         .each((cell, index) => expect(cell.text()).to.be.equal(expectedHeaderCells[index]));
       const expectedCells = [
-        'Burger King City Centre', 'Burger, fast food',
+        'Burger King City Centre', '5',
       ];
       cy.get('tbody > tr > td')
         .should('have.length', expectedCells.length)
@@ -189,8 +240,6 @@ describe('Restaurant search page', () => {
         .contains('Cancel')
         .click();
     });
-
-    // TODO test restaurant editing and details on mobile (same modal)
 
   });
 

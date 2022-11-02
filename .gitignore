@@ -12,5 +12,11 @@ node_modules/
 
 secrets.yaml
 
+frontend-app/src/api/.openapi-generator
+frontend-app/src/api/.gitignore
+frontend-app/src/api/.npmignore
+frontend-app/src/api/.openapi-generator-ignore
+frontend-app/src/api/git_push.sh
+
 frontend-app/cypress/screenshots
 frontend-app/cypress/videos
