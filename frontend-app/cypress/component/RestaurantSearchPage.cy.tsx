@@ -68,8 +68,52 @@ describe('Restaurant search page', () => {
                   .should('not.exist');
               });
 
+              it('create new restaurant', () => {
+                const name = 'Trattoria Napoli';
+                const triedBefore = true;
+                const rating = 9;
+                const review = 'Great pizza!';
+                const notes = ['I have to try all of their pizzas', 'Great value for money'];
+                const categories = ['PIZZA'];
+                cy.intercept('POST', '/restaurants', req => {
+                  req.reply({ name, triedBefore, rating, review, notes, categories })
+                }).as('restaurantCreation')
+
+                cy.mount(<RestaurantSearchPage/>)
+                  .get('button')
+                  .contains('Add')
+                  .click();
+
+                cy.get('.ant-modal-body input#name')
+                  .type(name);
+                cy.get('.ant-modal-body input#categories')
+                  .type('piz{enter}', {force: true})
+                  .blur();
+                cy.get('.ant-modal-body .ant-switch-inner')
+                  .click();
+                cy.get('.ant-modal-body input#rating')
+                  .parents('.ant-select-selector')
+                  .click()
+                  .get('.ant-select-item')
+                  .contains('' + rating)
+                  .click();
+                cy.get('.ant-modal-body textarea#review')
+                  .type(review)
+                  .get('.ant-modal-body textarea#notes')
+                  .type(notes.join('\n'));
+                cy.get('.ant-modal-footer')
+                  .contains('Create')
+                  .click();
+
+                cy.wait('@restaurantCreation')
+                  .then(interception => {
+                    assert.deepEqual(interception.request.body, {
+                      name, triedBefore, rating, review, notes, categories
+                    });
+                  });
+              });
+
               it('restaurant not visited before edited after trying out', () => {
-              // TODO extract cypress commands
                 const name = 'Super Tasty Burger';
                 const triedBefore = true;
                 const rating = 7;
@@ -89,14 +133,6 @@ describe('Restaurant search page', () => {
                   .click();
                 cy.get('.ant-modal-body .ant-switch-inner')
                   .click();
-                for (let i = 1; i <= 10; i++) {
-                  cy.get('.ant-modal-body input#rating')
-                    .parents('.ant-select-selector')
-                    .click()
-                    .get('.ant-select-item')
-                    .contains('' + i)
-                    .click();
-                }
                 cy.get('.ant-modal-body input#rating')
                   .parents('.ant-select-selector')
                   .click()
@@ -118,6 +154,11 @@ describe('Restaurant search page', () => {
                     });
                   });
               });
+
+              // TODO extract cypress commands
+              // TODO edit with rename
+              // TODO verify that button is disabled when name input is empty
+              // TODO verify available options for category and rating
 
             });
           });

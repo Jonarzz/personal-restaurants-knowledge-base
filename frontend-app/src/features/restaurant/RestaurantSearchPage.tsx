@@ -2,7 +2,7 @@ import {CheckOutlined, CloseOutlined} from '@ant-design/icons';
 import {Button, Card, Col, Form, Input, Modal, Popover, Row, Select, Switch, Table} from 'antd';
 import {Breakpoint} from 'antd/es/_util/responsiveObserve';
 import React, {useEffect, useState} from 'react';
-import {Category, RestaurantData, RestaurantEntryApi} from '../../api';
+import {Category, RestaurantData, RestaurantEntryApi, RestaurantsApi} from '../../api';
 import {restaurantsApi} from '../../api/ApiFacade';
 import './RestaurantSearchPage.css';
 
@@ -48,10 +48,13 @@ const createPopover = (popoverContent: any) => (
   </Popover>
 );
 
+// TODO refactor thoroughly
+
 export const RestaurantSearchPage = () => {
 
   const [restaurants, setRestaurants] = useState<RestaurantData[]>();
   const [modalRestaurant, setModalRestaurant] = useState<RestaurantData>();
+  const [nameInModal, setNameInModal] = useState('');
   const [triedBeforeInModal, setTriedBeforeInModal] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -59,6 +62,7 @@ export const RestaurantSearchPage = () => {
     if (!modalRestaurant) {
       return;
     }
+    setNameInModal(modalRestaurant.name || '');
     setTriedBeforeInModal(modalRestaurant.triedBefore || false);
   }, [modalRestaurant]);
 
@@ -115,7 +119,17 @@ export const RestaurantSearchPage = () => {
 
   return (
     <>
-      <Card title="Find restaurants">
+      <Card title={<Row>
+        <Col span={18}>Restaurants</Col>
+        <Col span={6} style={{textAlign: 'right'}}>
+          <Button onClick={() => {
+            setModalRestaurant({});
+            setModalOpen(true);
+          }}>
+            Add
+          </Button>
+        </Col>
+      </Row>}>
         <Form onFinish={onFinish}
               autoComplete="off">
           <Row gutter={{xxl: 32, xl: 16, lg: 16, md: 8, sm: 8, xs: 4}}>
@@ -170,8 +184,9 @@ export const RestaurantSearchPage = () => {
       </Card>
 
       {modalRestaurant && (
-        <Modal title={modalRestaurant.name}
-               okText="Update"
+        <Modal title={modalRestaurant.name || 'New restaurant'}
+               okText={modalRestaurant.name ? 'Update' : 'Create'}
+               okButtonProps={{disabled: !nameInModal}}
                open={modalOpen}
                onOk={() => {
                  modalForm.submit();
@@ -184,24 +199,34 @@ export const RestaurantSearchPage = () => {
                }}>
           <Form form={modalForm}
                 onFinish={values => {
-                  if (!modalRestaurant?.name) {
-                    return;
+                  const restaurantName = modalRestaurant?.name;
+                  if (restaurantName) {
+                    new RestaurantEntryApi()
+                      .updateRestaurant(restaurantName, {
+                        ...values,
+                        notes: values.notes?.split('\n'),
+                      })
+                      .then(response => {
+                        console.log('Updated', response);
+                      });
+                  } else {
+                    new RestaurantsApi()
+                      .createRestaurant({
+                        ...values,
+                        notes: values.notes?.split('\n'),
+                      }).then(response => {
+                      console.log('Created', response);
+                    });
                   }
                   // TODO refactor and use the response to update the state
-                  new RestaurantEntryApi()
-                    .updateRestaurant(modalRestaurant.name, {
-                      ...values,
-                      notes: values.notes.split('\n')
-                    })
-                    .then(response => {
-                      console.log(response);
-                    });
                 }}
                 onValuesChange={(changedFields: any) => {
-                  if (!changedFields.hasOwnProperty('triedBefore')) {
-                    return;
+                  if (changedFields.hasOwnProperty('name')) {
+                    setNameInModal(changedFields.name);
                   }
-                  setTriedBeforeInModal(changedFields.triedBefore);
+                  if (changedFields.hasOwnProperty('triedBefore')) {
+                    setTriedBeforeInModal(changedFields.triedBefore);
+                  }
                 }}
                 autoComplete="off">
             <Form.Item name="name" initialValue={modalRestaurant.name}>
