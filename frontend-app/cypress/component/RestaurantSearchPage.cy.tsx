@@ -1,3 +1,4 @@
+import {Category} from '../../src/api';
 import {RestaurantSearchPage} from '../../src/features/restaurant/RestaurantSearchPage';
 
 const DEVICES = {
@@ -99,13 +100,13 @@ describe('Restaurant search page', () => {
                   });
               });
 
-              it('restaurant not visited before edited after trying out', () => {
+              it('edit restaurant not visited before after trying out', () => {
                 const name = 'Super Tasty Burger',
                   triedBefore = true,
                   rating = 7,
                   review = 'This is a test review',
                   notes = ['This is the first note', 'This is the second note', 'And this is the third note'],
-                  categories = ['BURGER', 'SANDWICH'];
+                  categories = [Category.Burger, Category.Sandwich, Category.FastFood];
                 cy.intercept('PATCH', '/restaurants/' + encodeURIComponent(name), req => {
                   req.reply({ name, categories, triedBefore, rating, review, notes })
                 }).as('restaurantUpdate')
@@ -115,6 +116,7 @@ describe('Restaurant search page', () => {
 
                 cy.clickButton(name)
                   .clickTriedBeforeModalSwitch()
+                  .typeInCategoriesModalField('fast')
                   .selectRatingInModal(rating)
                   .typeInReviewModalField(review)
                   .typeInNotesModalField(notes)
@@ -128,9 +130,29 @@ describe('Restaurant search page', () => {
                   });
               });
 
+              it('verify restaurant modal elements interaction', () => {
+                cy.mount(<RestaurantSearchPage/>)
+                  .clickButton('Add');
+
+                // select all categories
+                for (let category in Category) {
+                  cy.typeInCategoriesModalField(category.substring(0, 4));
+                }
+                cy.get('.ant-select-selector .ant-select-selection-item')
+                  .should('have.length', Object.keys(Category).length);
+
+                // select all ratings
+                cy.clickTriedBeforeModalSwitch();
+                for (let i = 1; i <= 10; i++) {
+                  cy.selectRatingInModal(i);
+                }
+
+                // button should be disabled without restaurant name typed in
+                cy.get('.ant-modal-footer > .ant-btn-primary')
+                  .should('be.disabled');
+              });
+
               // TODO edit with rename
-              // TODO verify that button is disabled when name input is empty
-              // TODO verify available options for category and rating
 
             });
           });
@@ -186,7 +208,7 @@ describe('Restaurant search page', () => {
         ]);
     });
 
-    it('full restaurants data is available in modal after click', () => {
+    it('full not tried before restaurant data is available in modal after click', () => {
       cy.mount(<RestaurantSearchPage/>)
         .clickSubmitButton();
 
@@ -200,8 +222,9 @@ describe('Restaurant search page', () => {
         .getTriedBeforeModalSwitch()
         .should('have.text', 'Not tried before')
         .getRatingModalField()
-        .should('not.have.value')
         .should('be.disabled')
+        .parent()
+        .should('not.have.text')
         .getReviewModalField()
         .should('not.have.value')
         .should('be.disabled')
@@ -210,6 +233,37 @@ describe('Restaurant search page', () => {
         .should('not.have.value')
         .should('not.be.disabled')
         .should('have.attr', 'placeholder', 'Notes (separated with newlines)')
+        .clickButton('Cancel');
+    });
+
+    it('full tried before restaurant data is available in modal after click', () => {
+      const restaurantName = 'Burger King City Centre';
+
+      cy.mount(<RestaurantSearchPage/>)
+        .clickSubmitButton();
+
+      cy.clickButton(restaurantName)
+        .get('.ant-modal-header > .ant-modal-title')
+        .should('have.text', restaurantName)
+        .getNameModalField()
+        .should('have.value', restaurantName)
+        .get('.ant-modal-body .ant-select-selection-item-content')
+        .should('contain.text', 'Burger', 'Fast Food')
+        .getTriedBeforeModalSwitch()
+        .should('have.text', 'Tried before')
+        .getRatingModalField()
+        .should('not.be.disabled')
+        .parents('.ant-select-selector')
+        .should('have.text', '5')
+        .getReviewModalField()
+        .should('have.value', `Not the greatest burger, but it's all right for a fast food I guess`)
+        .should('not.be.disabled')
+        .getNotesModalField()
+        .should('contain.text',
+          `Whooper has plenty of white onion\n`
+          + `Double cheeseburger is OK for the price\n`
+          + `Fries can be great, but can also be mediocre - it's a lottery`)
+        .should('not.be.disabled')
         .clickButton('Cancel');
     });
 

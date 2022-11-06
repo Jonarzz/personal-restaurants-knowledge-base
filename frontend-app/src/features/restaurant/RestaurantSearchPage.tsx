@@ -2,8 +2,8 @@ import {CheckOutlined, CloseOutlined} from '@ant-design/icons';
 import {Button, Card, Col, Form, Input, Modal, Popover, Row, Select, Switch, Table} from 'antd';
 import {Breakpoint} from 'antd/es/_util/responsiveObserve';
 import React, {useEffect, useState} from 'react';
-import {Category, RestaurantData, RestaurantEntryApi, RestaurantsApi} from '../../api';
-import {restaurantsApi} from '../../api/ApiFacade';
+import {Category, RestaurantData} from '../../api';
+import {restaurantEntryApi, restaurantsApi} from '../../api/ApiFacade';
 import './RestaurantSearchPage.css';
 
 const prettifyCategoryName = (name: string) => {
@@ -201,7 +201,7 @@ export const RestaurantSearchPage = () => {
                 onFinish={values => {
                   const restaurantName = modalRestaurant?.name;
                   if (restaurantName) {
-                    new RestaurantEntryApi()
+                    restaurantEntryApi
                       .updateRestaurant(restaurantName, {
                         ...values,
                         notes: values.notes?.split('\n'),
@@ -210,7 +210,7 @@ export const RestaurantSearchPage = () => {
                         console.log('Updated', response);
                       });
                   } else {
-                    new RestaurantsApi()
+                    restaurantsApi
                       .createRestaurant({
                         ...values,
                         notes: values.notes?.split('\n'),
