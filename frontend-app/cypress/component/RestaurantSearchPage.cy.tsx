@@ -241,15 +241,18 @@ describe('Restaurant search page', () => {
         ]);
     });
 
-    it('full not tried before restaurant data is available in modal after click', () => {
+    it('view restaurants details in modal after click', () => {
+      const notTriedBeforeRestaurant = 'Super Tasty Burger';
+      const triedBeforeRestaurant = 'Burger King City Centre';
+
       cy.mount(<RestaurantSearchPage/>)
         .clickSubmitButton();
 
-      cy.clickButton('Super Tasty Burger')
+      cy.clickButton(notTriedBeforeRestaurant)
         .getModalTitle()
-        .should('have.text', 'Super Tasty Burger')
+        .should('have.text', notTriedBeforeRestaurant)
         .getNameModalField()
-        .should('have.value', 'Super Tasty Burger')
+        .should('have.value', notTriedBeforeRestaurant)
         .get('.ant-modal-body .ant-select-selection-item-content')
         .should('contain.text', 'Burger', 'Sandwich')
         .getTriedBeforeModalSwitch()
@@ -267,19 +270,12 @@ describe('Restaurant search page', () => {
         .should('not.be.disabled')
         .should('have.attr', 'placeholder', 'Notes (separated with newlines)')
         .clickButton('Cancel');
-    });
 
-    it('full tried before restaurant data is available in modal after click', () => {
-      const restaurantName = 'Burger King City Centre';
-
-      cy.mount(<RestaurantSearchPage/>)
-        .clickSubmitButton();
-
-      cy.clickButton(restaurantName)
+      cy.clickButton(triedBeforeRestaurant)
         .getModalTitle()
-        .should('have.text', restaurantName)
+        .should('have.text', triedBeforeRestaurant)
         .getNameModalField()
-        .should('have.value', restaurantName)
+        .should('have.value', triedBeforeRestaurant)
         .get('.ant-modal-body .ant-select-selection-item-content')
         .should('contain.text', 'Burger', 'Fast Food')
         .getTriedBeforeModalSwitch()
