@@ -24,5 +24,3 @@ jobs:
         cache: maven
     - name: Build with Maven
       run: mvn -B clean package
-
-# TODO front-end build

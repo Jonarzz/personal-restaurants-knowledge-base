@@ -1,2 +1,3 @@
 # Personal restaurants knowledge base
-![CI build badge](https://github.com/Jonarzz/personal-restaurants-knowledge-base/actions/workflows/maven.yml/badge.svg)
+![backend build badge](https://github.com/Jonarzz/personal-restaurants-knowledge-base/actions/workflows/maven.yml/badge.svg)
+![frontend build badge](https://github.com/Jonarzz/personal-restaurants-knowledge-base/actions/workflows/node.js.yml/badge.svg)
