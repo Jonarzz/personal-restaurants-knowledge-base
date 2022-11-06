@@ -200,6 +200,10 @@ export const RestaurantSearchPage = () => {
           <Form form={modalForm}
                 onFinish={values => {
                   const restaurantName = modalRestaurant?.name;
+                  if (!values.triedBefore) {
+                    delete values.rating;
+                    delete values.review;
+                  }
                   if (restaurantName) {
                     restaurantEntryApi
                       .updateRestaurant(restaurantName, {

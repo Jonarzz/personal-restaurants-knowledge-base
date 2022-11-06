@@ -45,6 +45,7 @@ export const verifyNotesTooltip = (...expectedNotes: string[]) => cy.get('tbody'
                                                                     .should('have.length', expectedNotes.length)
                                                                     .each((item, index) => expect(item.text()).to.be.equal(expectedNotes[index]));
 
+export const getModalTitle = () => cy.get('.ant-modal-header > .ant-modal-title');
 export const getNameModalField = () => cy.get('.ant-modal-body input#name');
 export const getCategoriesModalField = () => cy.get('.ant-modal-body input#categories');
 export const getTriedBeforeModalSwitch = () => cy.get('.ant-modal-body .ant-switch-inner');

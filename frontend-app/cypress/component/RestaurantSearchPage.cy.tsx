@@ -69,6 +69,8 @@ describe('Restaurant search page', () => {
                   .should('not.exist');
               });
 
+              // TODO assert items (re)rendering after creation/update
+
               it('create new restaurant', () => {
                 const name = 'Trattoria Napoli',
                   triedBefore = true,
@@ -120,12 +122,45 @@ describe('Restaurant search page', () => {
                   .selectRatingInModal(rating)
                   .typeInReviewModalField(review)
                   .typeInNotesModalField(notes)
-                  .clickButton('Update')
+                  .clickButton('Update');
 
                 cy.wait('@restaurantUpdate')
                   .then(interception => {
                     assert.deepEqual(interception.request.body, {
                       name, categories, triedBefore, rating, review, notes
+                    });
+                  });
+              });
+
+              it('mark visited before restaurant as not visited with rename', () => {
+                const name = 'Burger King City Centre',
+                  newName = 'New test name',
+                  triedBefore = false,
+                  newNote = 'New test note',
+                  categories = [Category.Burger, Category.FastFood];
+                cy.intercept('PATCH', '/restaurants/' + encodeURIComponent(name), req => {
+                  req.reply({ name: newName, categories, triedBefore, notes: [newNote] })
+                }).as('restaurantUpdate')
+
+                cy.mount(<RestaurantSearchPage/>)
+                  .clickSubmitButton();
+
+                cy.clickButton(name)
+                  .getNameModalField()
+                  .clear()
+                  .type(newName)
+                  .clickTriedBeforeModalSwitch()
+                  .getNotesModalField()
+                  .clear()
+                  .type(newNote)
+                  .getModalTitle()
+                  .should('have.text', name)
+                  .clickButton('Update');
+
+                cy.wait('@restaurantUpdate')
+                  .then(interception => {
+                    assert.deepEqual(interception.request.body, {
+                      name: newName, categories, triedBefore, notes: [newNote]
                     });
                   });
               });
@@ -151,8 +186,6 @@ describe('Restaurant search page', () => {
                 cy.get('.ant-modal-footer > .ant-btn-primary')
                   .should('be.disabled');
               });
-
-              // TODO edit with rename
 
             });
           });
@@ -213,7 +246,7 @@ describe('Restaurant search page', () => {
         .clickSubmitButton();
 
       cy.clickButton('Super Tasty Burger')
-        .get('.ant-modal-header > .ant-modal-title')
+        .getModalTitle()
         .should('have.text', 'Super Tasty Burger')
         .getNameModalField()
         .should('have.value', 'Super Tasty Burger')
@@ -243,7 +276,7 @@ describe('Restaurant search page', () => {
         .clickSubmitButton();
 
       cy.clickButton(restaurantName)
-        .get('.ant-modal-header > .ant-modal-title')
+        .getModalTitle()
         .should('have.text', restaurantName)
         .getNameModalField()
         .should('have.value', restaurantName)

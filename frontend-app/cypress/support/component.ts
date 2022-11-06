@@ -1,9 +1,10 @@
 import {mount} from 'cypress/react18';
 import {
-  clickButton, clickSubmitButton, clickTriedBeforeModalSwitch, clickTriedBeforeSearchButton, getCategoriesModalField, getCategorySearchField, getNameModalField,
-  getNameSearchField, getNotesModalField, getRatingModalField, getRatingSearchField, getReviewModalField, getSubmitButton, getTable, getTriedBeforeModalSwitch,
-  getTriedBeforeSearchButton, selectRatingInModal, selectSearchCategory, selectSearchRating, typeInCategoriesModalField, typeInNameModalField,
-  typeInNameSearchField, typeInNotesModalField, typeInReviewModalField, verifyNotesTooltip, verifyReviewTooltip, verifyTableHeaderCells, verifyTableRows,
+  clickButton, clickSubmitButton, clickTriedBeforeModalSwitch, clickTriedBeforeSearchButton, getCategoriesModalField, getCategorySearchField, getModalTitle,
+  getNameModalField, getNameSearchField, getNotesModalField, getRatingModalField, getRatingSearchField, getReviewModalField, getSubmitButton, getTable,
+  getTriedBeforeModalSwitch, getTriedBeforeSearchButton, selectRatingInModal, selectSearchCategory, selectSearchRating, typeInCategoriesModalField,
+  typeInNameModalField, typeInNameSearchField, typeInNotesModalField, typeInReviewModalField, verifyNotesTooltip, verifyReviewTooltip, verifyTableHeaderCells,
+  verifyTableRows,
 } from './commands';
 
 declare global {
@@ -25,6 +26,7 @@ declare global {
       verifyTableRows: typeof verifyTableRows,
       verifyReviewTooltip: typeof verifyReviewTooltip,
       verifyNotesTooltip: typeof verifyNotesTooltip,
+      getModalTitle: typeof getModalTitle,
       getNameModalField: typeof getNameModalField,
       getCategoriesModalField: typeof getCategoriesModalField,
       getTriedBeforeModalSwitch: typeof getTriedBeforeModalSwitch,
@@ -59,6 +61,7 @@ Cypress.Commands.addAll({
   verifyTableRows,
   verifyReviewTooltip,
   verifyNotesTooltip,
+  getModalTitle,
   getNameModalField,
   getCategoriesModalField,
   getTriedBeforeModalSwitch,
