@@ -1,5 +1,7 @@
 package io.github.jonarzz.restaurant.knowledge;
 
+import static org.springframework.http.HttpMethod.*;
+
 import org.springframework.boot.*;
 import org.springframework.boot.autoconfigure.*;
 import org.springframework.context.annotation.*;
@@ -29,7 +31,13 @@ public class PersonalRestaurantsKnowledgeBaseApplication extends WebSecurityConf
         http.authorizeRequests()
             .anyRequest().permitAll()
             .and()
-            .cors().configurationSource(request -> new CorsConfiguration().applyPermitDefaultValues());
+            .cors().configurationSource(request -> {
+                var corsConfig = new CorsConfiguration().applyPermitDefaultValues();
+                corsConfig.addAllowedMethod(PUT);
+                return corsConfig;
+            })
+            .and()
+            .csrf().ignoringAntMatchers("/**");
     }
 
 }

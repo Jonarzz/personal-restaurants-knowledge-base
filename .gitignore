@@ -20,3 +20,5 @@ frontend-app/src/api/git_push.sh
 
 frontend-app/cypress/screenshots
 frontend-app/cypress/videos
+
+.dynamodb-port

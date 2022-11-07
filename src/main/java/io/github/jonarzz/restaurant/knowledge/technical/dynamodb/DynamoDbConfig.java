@@ -7,24 +7,32 @@ import org.springframework.context.annotation.*;
 import software.amazon.awssdk.auth.credentials.*;
 import software.amazon.awssdk.services.dynamodb.*;
 
+import java.net.*;
+
 @Configuration
 public class DynamoDbConfig {
 
     private final String amazonAwsAccessKey;
     private final String amazonAwsSecretKey;
+    private final String dynamoDbUrl;
 
     public DynamoDbConfig(@Value("${amazon.aws.accesskey}") String amazonAwsAccessKey,
-                   @Value("${amazon.aws.secretkey}") String amazonAwsSecretKey) {
+                          @Value("${amazon.aws.secretkey}") String amazonAwsSecretKey,
+                          @Value("${amazon.aws.dynamodb-url:#{null}}") String dynamoDbUrl) {
         this.amazonAwsAccessKey = amazonAwsAccessKey;
         this.amazonAwsSecretKey = amazonAwsSecretKey;
+        this.dynamoDbUrl = dynamoDbUrl;
     }
 
     @Bean
     public DynamoDbClient amazonDynamoDb() {
-        return DynamoDbClient.builder()
-                             .credentialsProvider(awsCredentialsProvider())
-                             .region(EU_CENTRAL_1)
-                             .build();
+        var builder = DynamoDbClient.builder();
+        if (dynamoDbUrl != null) {
+            builder.endpointOverride(URI.create(dynamoDbUrl));
+        }
+        return builder.credentialsProvider(awsCredentialsProvider())
+                      .region(EU_CENTRAL_1)
+                      .build();
     }
 
     @Bean
@@ -35,6 +43,11 @@ public class DynamoDbConfig {
     @Bean
     AwsCredentials awsCredentials() {
         return AwsBasicCredentials.create(amazonAwsAccessKey, amazonAwsSecretKey);
+    }
+
+    @Bean
+    DynamoDbTableCreator dynamoDbTableCreator() {
+        return new DynamoDbTableCreator(amazonDynamoDb());
     }
 
 }

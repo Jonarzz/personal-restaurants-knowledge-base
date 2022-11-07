@@ -109,7 +109,7 @@ describe('Restaurant search page', () => {
                   review = 'This is a test review',
                   notes = ['This is the first note', 'This is the second note', 'And this is the third note'],
                   categories = [Category.Burger, Category.Sandwich, Category.FastFood];
-                cy.intercept('PATCH', '/restaurants/' + encodeURIComponent(name), req => {
+                cy.intercept('PUT', '/restaurants/' + encodeURIComponent(name), req => {
                   req.reply({ name, categories, triedBefore, rating, review, notes })
                 }).as('restaurantUpdate')
 
@@ -138,7 +138,7 @@ describe('Restaurant search page', () => {
                   triedBefore = false,
                   newNote = 'New test note',
                   categories = [Category.Burger, Category.FastFood];
-                cy.intercept('PATCH', '/restaurants/' + encodeURIComponent(name), req => {
+                cy.intercept('PUT', '/restaurants/' + encodeURIComponent(name), req => {
                   req.reply({ name: newName, categories, triedBefore, notes: [newNote] })
                 }).as('restaurantUpdate')
 
@@ -182,7 +182,8 @@ describe('Restaurant search page', () => {
                   cy.selectRatingInModal(i);
                 }
 
-                // button should be disabled without restaurant name typed in
+                // button should be disabled without restaurant name and a category typed in
+                // TODO type in name and expect to still be disabled
                 cy.get('.ant-modal-footer > .ant-btn-primary')
                   .should('be.disabled');
               });

@@ -54,14 +54,14 @@ public class AttributesCreator {
     }
 
     public AttributesCreator putIfNotEmpty(String attributeName, List<String> values) {
-        if (!values.isEmpty()) {
+        if (values != null && !values.isEmpty()) {
             attributes.put(attributeName, listAttribute(values));
         }
         return this;
     }
 
     public <S> AttributesCreator putIfNotEmpty(String attributeName, Set<S> values, Function<S, String> mapper) {
-        if (!values.isEmpty()) {
+        if (values != null && !values.isEmpty()) {
             attributes.put(attributeName, setAttribute(values, mapper));
         }
         return this;

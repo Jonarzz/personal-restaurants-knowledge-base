@@ -1,7 +1,7 @@
 import {CheckOutlined, CloseOutlined} from '@ant-design/icons';
 import {Button, Popover, Table} from 'antd';
 import {Breakpoint} from 'antd/es/_util/responsiveObserve';
-import React, {useMemo} from 'react';
+import React, {useCallback, useMemo} from 'react';
 import {Category, RestaurantData} from '../../api';
 import {prettifyCategoryName} from './common';
 
@@ -38,16 +38,12 @@ const renderNotes = (value: string[]) => value?.length
 
 export const RestaurantsTable = ({restaurants, openRestaurantDetails}: Props) => {
 
-  if (!restaurants) {
-    return null;
-  }
-
-  const renderName = (value: string, restaurant: RestaurantData) => (
+  const renderName = useCallback((value: string, restaurant: RestaurantData) => (
     <Button type="link"
             onClick={() => {openRestaurantDetails(restaurant)}}>
       {value}
     </Button>
-  );
+  ), [openRestaurantDetails]);
 
   const tableColumns = useMemo(() => [{
     title: 'Name',
@@ -76,7 +72,11 @@ export const RestaurantsTable = ({restaurants, openRestaurantDetails}: Props) =>
     dataIndex: 'notes',
     render: renderNotes,
     responsive: ['md' as Breakpoint],
-  }], [openRestaurantDetails]);
+  }], [renderName]);
+
+  if (!restaurants) {
+    return null;
+  }
 
   return (
     <Table columns={tableColumns}

@@ -1,0 +1,8 @@
+amazon:
+  aws:
+    accesskey: testaccess
+    secretkey: testsecret
+logging:
+  level:
+    io.github.jonarzz: debug
+    org.springframework: debug

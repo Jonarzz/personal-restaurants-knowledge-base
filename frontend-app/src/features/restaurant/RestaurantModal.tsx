@@ -1,5 +1,5 @@
 import {Form, Input, Modal, Select, Switch} from 'antd';
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {RestaurantData} from '../../api';
 import {restaurantEntryApi, restaurantsApi} from '../../api/ApiFacade';
 import {CATEGORY_SELECT_OPTIONS, RATING_SELECT_OPTIONS} from './common';
@@ -21,10 +21,16 @@ export const RestaurantModal = ({restaurantData, onClose}: Props) => {
   const [modalForm] = Form.useForm();
 
   // TODO use the responses to update the state
+  // TODO display API call errors (notifications / in modal)
 
-  const onValuesChange = (changedFields: FormData) => {
-    changedFields.name && setName(changedFields.name);
-    changedFields.triedBefore && setTriedBefore(changedFields.triedBefore);
+  useEffect(() => {
+    setName(restaurantData.name);
+    setTriedBefore(restaurantData.triedBefore);
+  }, [restaurantData]);
+
+  const onValuesChange = (changedFields: FormData, values: FormData) => {
+    setName(values.name);
+    setTriedBefore(values.triedBefore);
   };
 
   const createRestaurant = (formData: FormData) => {
@@ -53,6 +59,7 @@ export const RestaurantModal = ({restaurantData, onClose}: Props) => {
       createRestaurant(values);
     }
   };
+
   return (
     <Modal open
            title={restaurantData.name || 'New restaurant'}

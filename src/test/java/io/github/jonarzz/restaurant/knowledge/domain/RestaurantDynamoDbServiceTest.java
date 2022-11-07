@@ -6,9 +6,6 @@ import static org.assertj.core.api.InstanceOfAssertFactories.*;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.*;
-import static software.amazon.awssdk.regions.Region.*;
-import static software.amazon.awssdk.services.dynamodb.model.KeyType.*;
-import static software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType.*;
 
 import org.assertj.core.api.*;
 import org.junit.jupiter.api.*;
@@ -18,18 +15,14 @@ import org.junit.jupiter.params.provider.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.boot.test.context.*;
 import org.springframework.boot.test.mock.mockito.*;
-import org.springframework.context.annotation.*;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.context.*;
 import org.springframework.test.context.*;
 import org.testcontainers.containers.*;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.*;
-import software.amazon.awssdk.auth.credentials.*;
 import software.amazon.awssdk.services.dynamodb.*;
-import software.amazon.awssdk.services.dynamodb.model.*;
 
-import java.net.*;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
@@ -42,8 +35,7 @@ import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 @SpringBootTest(
         webEnvironment = NONE,
         classes = {
-                DynamoDbConfig.class, RestaurantEntryManagementConfig.class, CacheConfig.class,
-                RestaurantDynamoDbServiceTest.Configuration.class
+                DynamoDbConfig.class, RestaurantEntryManagementConfig.class, CacheConfig.class
         }
 )
 @TestPropertySource(properties = {
@@ -65,20 +57,14 @@ class RestaurantDynamoDbServiceTest {
             .withCommand("-jar DynamoDBLocal.jar -inMemory -sharedDb")
             .withExposedPorts(8000);
 
-    @TestConfiguration
-    static class Configuration {
+    static {
+        dynamoDbContainer.start();
+    }
 
-        @Bean
-        @Primary
-        DynamoDbClient amazonDynamoDB(AwsCredentialsProvider awsCredentialsProvider) {
-            dynamoDbContainer.start();
-            return DynamoDbClient.builder()
-                                 .endpointOverride(URI.create("http://localhost:" + dynamoDbContainer.getFirstMappedPort()))
-                                 .region(EU_CENTRAL_1)
-                                 .credentialsProvider(awsCredentialsProvider)
-                                 .build();
-        }
-
+    @DynamicPropertySource
+    static void dynamicProperties(DynamicPropertyRegistry registry) {
+        registry.add("amazon.aws.dynamodb-url",
+                     () -> "http://localhost:" + dynamoDbContainer.getFirstMappedPort());
     }
 
     @Autowired
@@ -89,14 +75,14 @@ class RestaurantDynamoDbServiceTest {
     @Autowired
     RestaurantService restaurantService;
 
-    @BeforeAll
-    void beforeAll() {
-        amazonDynamoDb.createTable(prepareCreateTableRequest());
-    }
-
     @BeforeEach
     void setUp() {
         setUpSecurityContext(TEST_USER);
+    }
+
+    @AfterAll
+    static void afterAll() {
+        dynamoDbContainer.close();
     }
 
     @Test
@@ -489,8 +475,6 @@ class RestaurantDynamoDbServiceTest {
                 ), RestaurantItem::notes);
     }
 
-    // TODO test full update (all attributes) with and without renaming
-
     @Test
     @Order(50)
     void replaceCategories() {
@@ -585,6 +569,53 @@ class RestaurantDynamoDbServiceTest {
                 .returns(null, RestaurantItem::review);
     }
 
+    @Test
+    @Order(100)
+    void updateRestaurant_newValues() {
+        var categories = Set.of(PIZZA, PASTA, OTHER);
+        var rating = 9;
+        var review = "New review";
+        var notes = List.of("First new note", "Second new note");
+        var updateData = new RestaurantData()
+                .categories(categories)
+                .rating(rating)
+                .review(review)
+                .notes(notes);
+
+        actOn(NOT_TRIED_RESTAURANT_NAME,
+              restaurant -> restaurantService.update(restaurant, updateData));
+
+        assertRestaurantFound(NOT_TRIED_RESTAURANT_NAME)
+                .returns(TEST_USER, RestaurantItem::userId)
+                .returns(categories, RestaurantItem::categories)
+                .returns(true, RestaurantItem::triedBefore)
+                .returns(rating, RestaurantItem::rating)
+                .returns(review, RestaurantItem::review)
+                .returns(notes, RestaurantItem::notes);
+    }
+
+    @Test
+    @Order(100)
+    void updateRestaurant_removeValues() {
+        var categories = Set.of(BURGER, FAST_FOOD);
+        var updateData = new RestaurantData()
+                .categories(categories)
+                .rating(null)
+                .review(null)
+                .notes(null);
+
+        actOn(NOT_TRIED_RESTAURANT_NAME,
+              restaurant -> restaurantService.update(restaurant, updateData));
+
+        assertRestaurantFound(NOT_TRIED_RESTAURANT_NAME)
+                .returns(TEST_USER, RestaurantItem::userId)
+                .returns(categories, RestaurantItem::categories)
+                .returns(true, RestaurantItem::triedBefore)
+                .returns(null, RestaurantItem::rating)
+                .returns(null, RestaurantItem::review)
+                .returns(List.of(), RestaurantItem::notes);
+    }
+
     private void actOn(String restaurantName, Consumer<RestaurantItem> action) {
         var restaurant = restaurantService.fetch(restaurantName)
                                           .orElseThrow(() -> new IllegalStateException("Not found restaurant with name "
@@ -619,38 +650,6 @@ class RestaurantDynamoDbServiceTest {
                           "Tuna should be ordered cold",
                           "Don't go too heavy on the veggies"
                   ), RestaurantItem::notes);
-    }
-
-    private static CreateTableRequest prepareCreateTableRequest() {
-        var userIdAttribute = "userId";
-        var nameLowercaseAttribute = "nameLowercase";
-        return CreateTableRequest.builder()
-                                 .tableName("Restaurant")
-                                 .keySchema(
-                                         KeySchemaElement.builder()
-                                                         .attributeName(userIdAttribute)
-                                                         .keyType(HASH)
-                                                         .build(),
-                                         KeySchemaElement.builder()
-                                                         .attributeName(nameLowercaseAttribute)
-                                                         .keyType(RANGE)
-                                                         .build()
-                                 )
-                                 .attributeDefinitions(
-                                         AttributeDefinition.builder()
-                                                            .attributeName(userIdAttribute)
-                                                            .attributeType(S)
-                                                            .build(),
-                                         AttributeDefinition.builder()
-                                                            .attributeName(nameLowercaseAttribute)
-                                                            .attributeType(S)
-                                                            .build()
-                                 )
-                                 .provisionedThroughput(ProvisionedThroughput.builder()
-                                                                             .readCapacityUnits(1L)
-                                                                             .writeCapacityUnits(1L)
-                                                                             .build())
-                                 .build();
     }
 
     private static void setUpSecurityContext(String user) {

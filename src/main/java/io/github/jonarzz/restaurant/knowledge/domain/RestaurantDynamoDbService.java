@@ -6,6 +6,7 @@ import static io.github.jonarzz.restaurant.knowledge.technical.dynamodb.Attribut
 import static software.amazon.awssdk.services.dynamodb.model.AttributeAction.*;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.*;
 
+import lombok.extern.slf4j.*;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.util.*;
@@ -14,6 +15,7 @@ import java.util.stream.Stream;
 import io.github.jonarzz.restaurant.knowledge.model.*;
 import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
+@Slf4j
 class RestaurantDynamoDbService implements RestaurantService {
 
     private static final AttributeValueUpdate DELETE_UPDATE = AttributeValueUpdate.builder()
@@ -28,21 +30,24 @@ class RestaurantDynamoDbService implements RestaurantService {
 
     @Override
     public Optional<RestaurantItem> fetch(String restaurantName) {
+        log.debug("Fetching restaurant by name: {}", restaurantName);
         return repository.findByKey(new RestaurantKey(restaurantName));
     }
 
     @Override
     public List<RestaurantItem> query(RestaurantQueryCriteria criteria) {
+        log.debug("Querying restaurant by criteria: {}", criteria);
         return repository.query(new RestaurantDynamoDbCriteria(criteria));
     }
 
     @Override
-    public void create(RestaurantItem item) {
-        if (Stream.of(item.rating(), item.review())
+    public void create(RestaurantItem restaurant) {
+        if (Stream.of(restaurant.rating(), restaurant.review())
                   .anyMatch(Objects::nonNull)) {
-            item = item.markedAsTriedBefore();
+            restaurant = restaurant.markedAsTriedBefore();
         }
-        repository.create(item);
+        log.debug("Creating {}", restaurant);
+        repository.create(restaurant);
     }
 
     @Override
@@ -50,6 +55,7 @@ class RestaurantDynamoDbService implements RestaurantService {
         var modification = updateItem(restaurant).with(updateData);
         var changes = modification.changes();
         if (changes.empty()) {
+            log.debug("Skipping update of {} - no changes", restaurant);
             return Optional.empty();
         }
         var updatedItem = changes.applied();
@@ -57,18 +63,21 @@ class RestaurantDynamoDbService implements RestaurantService {
             create(updatedItem);
             delete(restaurant);
         } else {
+            log.debug("Updating {}", restaurant);
             repository.update(restaurant, changes.toAttributesCreator());
         }
         return Optional.of(updatedItem);
     }
 
     @Override
-    public void delete(RestaurantItem restaurantItem) {
-        repository.delete(restaurantItem);
+    public void delete(RestaurantItem restaurant) {
+        log.debug("Deleting {}", restaurant);
+        repository.delete(restaurant);
     }
 
     @Override
     public void setRating(RestaurantItem restaurant, int rating) {
+        log.debug("Setting {} rating to {}", restaurant, rating);
         repository.update(restaurant, Map.of(
                 RATING, asNumberUpdateAttribute(rating),
                 TRIED_BEFORE, asUpdateAttribute(fromBool(true))
@@ -77,6 +86,7 @@ class RestaurantDynamoDbService implements RestaurantService {
 
     @Override
     public void setReview(RestaurantItem restaurant, String review) {
+        log.debug("Setting {} review: {}", restaurant, review);
         repository.update(restaurant, Map.of(
                 REVIEW, asUpdateAttribute(fromS(review)),
                 TRIED_BEFORE, asUpdateAttribute(fromBool(true))
@@ -85,6 +95,7 @@ class RestaurantDynamoDbService implements RestaurantService {
 
     @Override
     public void setTriedBefore(RestaurantItem restaurant, boolean tried) {
+        log.debug("Setting {} tried before flag to {}", restaurant, tried);
         Map<String, AttributeValueUpdate> updates = new HashMap<>();
         updates.put(TRIED_BEFORE, asUpdateAttribute(fromBool(tried)));
         if (!tried) {
@@ -96,6 +107,7 @@ class RestaurantDynamoDbService implements RestaurantService {
 
     @Override
     public void replaceCategories(RestaurantItem restaurant, Set<Category> categories) {
+        log.debug("Replacing {} categories with {}", restaurant, categories);
         repository.update(restaurant, Map.of(
                 CATEGORIES, asUpdateAttribute(setAttribute(categories, Category::getValue))
         ));
@@ -103,6 +115,7 @@ class RestaurantDynamoDbService implements RestaurantService {
 
     @Override
     public void replaceNotes(RestaurantItem restaurant, List<String> notes) {
+        log.debug("Replacing {} notes with {}", restaurant, notes);
         repository.update(restaurant, Map.of(
                 NOTES, asUpdateAttribute(listAttribute(notes))
         ));

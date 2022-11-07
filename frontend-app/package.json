@@ -23,8 +23,9 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "npx cypress run --component --config video=false",
     "eject": "react-scripts eject",
+    "test": "npx cypress run --component --config video=false",
+    "e2e-test": "npx cypress run --config video=false",
     "openapi:generate": "openapi-generator-cli generate -i ../src/main/resources/api/openapi.yaml -g typescript-axios -o src/api"
   },
   "eslintConfig": {

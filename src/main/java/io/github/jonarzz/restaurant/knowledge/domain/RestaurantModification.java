@@ -2,6 +2,7 @@ package io.github.jonarzz.restaurant.knowledge.domain;
 
 import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Attributes.*;
 import static java.util.Optional.*;
+import static java.util.function.Predicate.*;
 
 import software.amazon.awssdk.services.dynamodb.model.*;
 
@@ -28,7 +29,11 @@ class RestaurantModification {
     }
 
     boolean hasNewKey() {
-        var newKey = new RestaurantKey(updateData.getName());
+        var newName = updateData.getName();
+        if (newName == null) {
+            return false;
+        }
+        var newKey = new RestaurantKey(newName);
         return !base.getKey().equals(newKey);
     }
 
@@ -67,13 +72,15 @@ class RestaurantModification {
                 empty = false;
             }
             var updatedReview = updateData.getReview();
-            if (updatedReview != null && !base.review().equals(updatedReview)) {
+            if (!Objects.equals(base.review(), updatedReview)) {
                 review = updatedReview;
                 empty = false;
             }
             var updatedRating = updateData.getRating();
-            if (updatedRating != null && !base.rating().equals(updatedRating)) {
-                rating = String.valueOf(updatedRating);
+            if (!Objects.equals(base.rating(), updatedRating)) {
+                rating = Optional.ofNullable(updatedRating)
+                                 .map(Object::toString)
+                                 .orElse(null);
                 empty = false;
             }
             var updatedTriedBefore = updateData.getTriedBefore();
@@ -82,8 +89,10 @@ class RestaurantModification {
                 empty = false;
             }
             var updatedNotes = updateData.getNotes();
-            if (updatedNotes != null && !base.notes().equals(updatedNotes)) {
-                notes = updatedNotes;
+            if (updatedNotes != null && !updatedNotes.equals(base.notes())) {
+                notes = updatedNotes.stream()
+                                    .filter(not(String::isBlank))
+                                    .toList();
                 empty = false;
             }
             var updatedCategories = updateData.getCategories();

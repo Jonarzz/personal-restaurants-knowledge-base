@@ -158,7 +158,7 @@ paths:
           description: Restaurant with given name not found
           x-contracts:
             - contractId: try-to-get-non-existent
-    patch:
+    put:
       summary: Update the restaurant
       operationId: updateRestaurant
       tags: [ Restaurant entry ]
@@ -166,7 +166,7 @@ paths:
         - contractId: rename
           name: Successfully rename restaurant
           contractPath: /restaurants/KFC City Centre
-        - contractId: rename-to-same-name
+        - contractId: update-without-changes
           name: Rename to the same name
           contractPath: /restaurants/KFC City Centre
         - contractId: try-to-rename-non-existent
@@ -185,9 +185,14 @@ paths:
           - contractId: rename
             body:
               name: Trattoria Napoli
-          - contractId: rename-to-same-name
+          - contractId: update-without-changes
             body:
               name: KFC City Centre
+              categories: [ 'FAST_FOOD', 'CHICKEN' ]
+              triedBefore: true
+              rating: 4
+              review: 'Not my gig'
+              notes: [ 'Try to avoid it' ]
           - contractId: try-to-rename-non-existent
             body:
               name: Does not matter
@@ -213,7 +218,7 @@ paths:
         204:
           description: Restaurant not changed
           x-contracts:
-            - contractId: rename-to-same-name
+            - contractId: update-without-changes
         404:
           description: Restaurant with given name not found
           x-contracts:
