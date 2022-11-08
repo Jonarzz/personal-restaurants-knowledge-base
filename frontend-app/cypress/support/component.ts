@@ -1,3 +1,4 @@
+import 'antd/dist/antd.dark.css';
 import {mount} from 'cypress/react18';
 import {
   clickButton, clickSubmitButton, clickTriedBeforeModalSwitch, clickTriedBeforeSearchButton, getCategoriesModalField, getCategorySearchField, getModalTitle,

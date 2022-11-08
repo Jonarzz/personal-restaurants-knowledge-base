@@ -1,8 +1,7 @@
-amazon:
-  aws:
-    accesskey: testaccess
-    secretkey: testsecret
+spring:
+  config:
+    import: secrets-local.yaml
 logging:
   level:
     io.github.jonarzz: debug
-    org.springframework: debug
+    org.springframework: info

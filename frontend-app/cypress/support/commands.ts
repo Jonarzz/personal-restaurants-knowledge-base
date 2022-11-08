@@ -1,5 +1,3 @@
-import 'antd/dist/antd.dark.css';
-
 export const getNameSearchField = () => cy.get('input#nameBeginsWith');
 export const getCategorySearchField = () => cy.get('input#category');
 export const getRatingSearchField = () => cy.get('input#ratingAtLeast');
