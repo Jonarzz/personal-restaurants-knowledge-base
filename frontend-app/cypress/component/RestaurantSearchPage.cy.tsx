@@ -80,7 +80,7 @@ describe('Restaurant search page', () => {
                   categories = ['PIZZA', 'PASTA'];
                 cy.intercept('POST', '/restaurants', req => {
                   req.reply({ name, categories, triedBefore, rating, review, notes })
-                }).as('restaurantCreation')
+                }).as('restaurantCreation');
 
                 cy.mount(<RestaurantSearchPage/>)
                   .clickButton('Add');
@@ -111,7 +111,7 @@ describe('Restaurant search page', () => {
                   categories = [Category.Burger, Category.Sandwich, Category.FastFood];
                 cy.intercept('PUT', '/restaurants/' + encodeURIComponent(name), req => {
                   req.reply({ name, categories, triedBefore, rating, review, notes })
-                }).as('restaurantUpdate')
+                }).as('restaurantUpdate');
 
                 cy.mount(<RestaurantSearchPage/>)
                   .clickSubmitButton();
@@ -140,7 +140,7 @@ describe('Restaurant search page', () => {
                   categories = [Category.Burger, Category.FastFood];
                 cy.intercept('PUT', '/restaurants/' + encodeURIComponent(name), req => {
                   req.reply({ name: newName, categories, triedBefore, notes: [newNote] })
-                }).as('restaurantUpdate')
+                }).as('restaurantUpdate');
 
                 cy.mount(<RestaurantSearchPage/>)
                   .clickSubmitButton();

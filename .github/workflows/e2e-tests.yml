@@ -19,17 +19,26 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
-      - name: Run E2E tests
+      - name: Run frontend
         run: |
           cd frontend-app
-          npm install
-          npm start &
-          cd ..
+          (npm install; npm start) &
+          while ! nc -z localhost 3000; do sleep 1; done # frontend
+      - name: Run backend
+        run: |
           mvn groovy:execute &
           until [ -f .dynamodb-port ]; do sleep 1; done
           mvn spring-boot:run -Dspring-boot.run.arguments="--amazon.aws.dynamodb-url=http://localhost:$(cat .dynamodb-port)" &
-          while ! nc -z localhost 8080; do sleep 1; done
+          while ! nc -z localhost 8080; do sleep 1; done # backend
+      - name: Execute E2E tests
+        run: |
           cd frontend-app
           npm run e2e-test
-          
-          
+      - name: Save screenshots artifact
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: frontend-app/cypress/screenshots
+          retention-days: 1
+
