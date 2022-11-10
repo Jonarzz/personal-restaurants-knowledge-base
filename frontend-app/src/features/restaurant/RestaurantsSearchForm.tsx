@@ -1,15 +1,21 @@
 import {Button, Col, Form, Input, Row, Select, Switch} from 'antd';
-import React from 'react';
+import React, {useEffect} from 'react';
 import {CATEGORY_SELECT_OPTIONS, RATING_SELECT_OPTIONS} from './common';
 
 type Props = {
-  onSubmit: (values: any) => void
+  onSubmit: (values: any) => void,
+  resetTrigger?: any
 };
 
-export const RestaurantsSearchForm = ({onSubmit}: Props) => {
+export const RestaurantsSearchForm = ({onSubmit, resetTrigger}: Props) => {
+
+  const [form] = Form.useForm();
+
+  useEffect(() => form.resetFields(), [form, resetTrigger]);
 
   return (
     <Form onFinish={onSubmit}
+          form={form}
           autoComplete="off">
       <Row gutter={{xxl: 32, xl: 16, lg: 16, md: 8, sm: 8, xs: 4}}>
 
@@ -36,7 +42,7 @@ export const RestaurantsSearchForm = ({onSubmit}: Props) => {
         </Col>
 
         <Col lg={4} md={5} sm={24} xs={24}>
-          <Form.Item name="triedBefore">
+          <Form.Item name="triedBefore" initialValue={false}>
             <Switch checkedChildren="Tried before"
                     unCheckedChildren="Not tried before"
                     style={{width: '100%'}}/>

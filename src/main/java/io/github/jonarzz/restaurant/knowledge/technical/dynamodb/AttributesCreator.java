@@ -60,6 +60,13 @@ public class AttributesCreator {
         return this;
     }
 
+    public AttributesCreator putOrEmpty(String attributeName, List<String> values) {
+        values = Optional.ofNullable(values)
+                         .orElse(List.of());
+        attributes.put(attributeName, listAttribute(values));
+        return this;
+    }
+
     public <S> AttributesCreator putIfNotEmpty(String attributeName, Set<S> values, Function<S, String> mapper) {
         if (values != null && !values.isEmpty()) {
             attributes.put(attributeName, setAttribute(values, mapper));

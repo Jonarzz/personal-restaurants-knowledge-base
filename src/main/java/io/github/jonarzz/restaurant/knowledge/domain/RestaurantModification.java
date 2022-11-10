@@ -4,6 +4,7 @@ import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Attri
 import static java.util.Optional.*;
 import static java.util.function.Predicate.*;
 
+import lombok.*;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.util.*;
@@ -54,6 +55,7 @@ class RestaurantModification {
         }
     }
 
+    @ToString
     class Changes {
 
         private String restaurantName;
@@ -115,7 +117,7 @@ class RestaurantModification {
             return creator.putIfPresent(REVIEW, review, AttributeValue::fromS)
                           .putIfPresent(RATING, rating, AttributeValue::fromN)
                           .putIfPresent(TRIED_BEFORE, triedBefore, AttributeValue::fromBool)
-                          .putIfNotEmpty(NOTES, notes)
+                          .putOrEmpty(NOTES, notes)
                           .putIfNotEmpty(CATEGORIES, categories, Category::getValue);
         }
 

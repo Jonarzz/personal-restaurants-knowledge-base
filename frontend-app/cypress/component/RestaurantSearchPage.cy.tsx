@@ -14,33 +14,6 @@ const DEVICES = {
 
 describe('Restaurant search page', () => {
 
-  const criteria = {
-    nameBeginsWith: 'Burger King',
-    category: 'BURGER',
-    ratingAtLeast: '3',
-  };
-
-  beforeEach(() => {
-    cy.fixture('restaurants')
-      .then(json => {
-        cy.intercept({
-          method: 'GET',
-          pathname: '/restaurants',
-          query: {
-            triedBefore: 'false',
-          },
-        }, json);
-        cy.intercept({
-          method: 'GET',
-          pathname: '/restaurants',
-          query: {
-            ...criteria,
-            triedBefore: 'true',
-          },
-        }, [json[1]]);
-      });
-  });
-
   describe(`Common tests`, () => {
 
     Object.entries(DEVICES)
@@ -69,8 +42,6 @@ describe('Restaurant search page', () => {
                   .should('not.exist');
               });
 
-              // TODO assert items (re)rendering after creation/update
-
               it('create new restaurant', () => {
                 const name = 'Trattoria Napoli',
                   triedBefore = true,
@@ -79,7 +50,7 @@ describe('Restaurant search page', () => {
                   notes = ['I have to try all of their pizzas', 'Great value for money'],
                   categories = ['PIZZA', 'PASTA'];
                 cy.intercept('POST', '/restaurants', req => {
-                  req.reply({ name, categories, triedBefore, rating, review, notes })
+                  req.reply({name, categories, triedBefore, rating, review, notes});
                 }).as('restaurantCreation');
 
                 cy.mount(<RestaurantSearchPage/>)
@@ -97,9 +68,16 @@ describe('Restaurant search page', () => {
                 cy.wait('@restaurantCreation')
                   .then(interception => {
                     assert.deepEqual(interception.request.body, {
-                      name, categories, triedBefore, rating, review, notes
+                      name, categories, triedBefore, rating, review, notes,
                     });
                   });
+
+                cy.verifyNotificationHeader('Restaurant created')
+                  .verifyNotificationContent('You can find the restaurant using the search form')
+                  // not closing the notification explicitly - waiting for it to disappear
+                  .verifySearchFormEmpty()
+                  .getTable()
+                  .should('not.exist');
               });
 
               it('edit restaurant not visited before after trying out', () => {
@@ -108,10 +86,11 @@ describe('Restaurant search page', () => {
                   rating = 7,
                   review = 'This is a test review',
                   notes = ['This is the first note', 'This is the second note', 'And this is the third note'],
-                  categories = [Category.Burger, Category.Sandwich, Category.FastFood];
-                cy.intercept('PUT', '/restaurants/' + encodeURIComponent(name), req => {
-                  req.reply({ name, categories, triedBefore, rating, review, notes })
-                }).as('restaurantUpdate');
+                  initialCategories = [Category.Burger, Category.Sandwich],
+                  updatedCategories = [Category.Burger, Category.Sandwich, Category.FastFood];
+                cy.intercept('GET', '/restaurants?triedBefore=false', req => req.reply([{name, categories: initialCategories}]));
+                cy.intercept('PUT', '/restaurants/' + encodeURIComponent(name), req => req.reply({triedBefore}))
+                  .as('restaurantUpdate');
 
                 cy.mount(<RestaurantSearchPage/>)
                   .clickSubmitButton();
@@ -127,9 +106,16 @@ describe('Restaurant search page', () => {
                 cy.wait('@restaurantUpdate')
                   .then(interception => {
                     assert.deepEqual(interception.request.body, {
-                      name, categories, triedBefore, rating, review, notes
+                      name, categories: updatedCategories, triedBefore, rating, review, notes,
                     });
                   });
+
+                cy.verifyNotificationHeader('Restaurant updated')
+                  .verifyNotificationContent('You can find the restaurant using the search form')
+                  .closeNotification()
+                  .verifySearchFormEmpty()
+                  .getTable()
+                  .should('not.exist');
               });
 
               it('mark visited before restaurant as not visited with rename', () => {
@@ -138,11 +124,14 @@ describe('Restaurant search page', () => {
                   triedBefore = false,
                   newNote = 'New test note',
                   categories = [Category.Burger, Category.FastFood];
-                cy.intercept('PUT', '/restaurants/' + encodeURIComponent(name), req => {
-                  req.reply({ name: newName, categories, triedBefore, notes: [newNote] })
-                }).as('restaurantUpdate');
+                cy.intercept('GET', '/restaurants?triedBefore=true', req => req.reply([{
+                  name, categories, triedBefore: true, rating: 6, review: 'Note empty review', notes: ['First', 'Second']
+                }]));
+                cy.intercept('PUT', '/restaurants/' + encodeURIComponent(name), req => req.reply({triedBefore}))
+                  .as('restaurantUpdate');
 
                 cy.mount(<RestaurantSearchPage/>)
+                  .clickTriedBeforeSearchButton()
                   .clickSubmitButton();
 
                 cy.clickButton(name)
@@ -160,9 +149,16 @@ describe('Restaurant search page', () => {
                 cy.wait('@restaurantUpdate')
                   .then(interception => {
                     assert.deepEqual(interception.request.body, {
-                      name: newName, categories, triedBefore, notes: [newNote]
+                      name: newName, categories, triedBefore, notes: [newNote],
                     });
                   });
+
+                cy.verifyNotificationHeader('Restaurant updated')
+                  .verifyNotificationContent('You can find the restaurant using the search form')
+                  .closeNotification()
+                  .verifySearchFormEmpty()
+                  .getTable()
+                  .should('not.exist');
               });
 
               it('verify restaurant modal elements interaction', () => {
@@ -174,7 +170,9 @@ describe('Restaurant search page', () => {
                   cy.typeInCategoriesModalField(category.substring(0, 4));
                 }
                 cy.get('.ant-select-selector .ant-select-selection-item')
-                  .should('have.length', Object.keys(Category).length);
+                  .should('have.length', Object.keys(Category).length)
+                  .get('.ant-select-clear')
+                  .click({force: true});
 
                 // select all ratings
                 cy.clickTriedBeforeModalSwitch();
@@ -183,9 +181,14 @@ describe('Restaurant search page', () => {
                 }
 
                 // button should be disabled without restaurant name and a category typed in
-                // TODO type in name and expect to still be disabled
-                cy.get('.ant-modal-footer > .ant-btn-primary')
-                  .should('be.disabled');
+                cy.verifyPrimaryModalButtonDisabled()
+                  .typeInNameModalField('Test')
+                  .verifyPrimaryModalButtonDisabled()
+                  .typeInCategoriesModalField('burg')
+                  .verifyPrimaryModalButtonDisabled(false)
+                  .getNameModalField()
+                  .clear()
+                  .verifyPrimaryModalButtonDisabled();
               });
 
             });
@@ -197,6 +200,17 @@ describe('Restaurant search page', () => {
     beforeEach(() => {
       const {height, width} = DEVICES.Desktop;
       cy.viewport(width, height);
+
+      cy.fixture('restaurants')
+        .then(json => {
+          cy.intercept({
+            method: 'GET',
+            pathname: '/restaurants',
+            query: {
+              triedBefore: 'false',
+            },
+          }, json);
+        });
     });
 
     it('restaurant elements are rendered in the table on search without criteria', () => {
@@ -206,10 +220,10 @@ describe('Restaurant search page', () => {
       cy.verifyTableHeaderCells('Name', 'Categories', 'Tried before', 'Rating', 'Review', 'Notes')
         .verifyTableRows([
           ['Super Tasty Burger', 'Burger, sandwich', '', '', '', ''],
-          ['Burger King City Centre', 'Burger, fast food', '', '5', 'Show', 'Show'],
+          ['Burger King City Centre', 'Burger, fast food', '', '5', 'Show review', 'Show notes'],
         ])
-        .verifyReviewTooltip(`Not the greatest burger, but it's all right for a fast food I guess`)
-        .verifyNotesTooltip(
+        .verifyRowReviewTooltip(2, `Not the greatest burger, but it's all right for a fast food I guess`)
+        .verifyRowNotesTooltip(2,
           `Whooper has plenty of white onion`,
           `Double cheeseburger is OK for the price`,
           `Fries can be great, but can also be mediocre - it's a lottery`,
@@ -220,9 +234,34 @@ describe('Restaurant search page', () => {
 
   describe('Mobile', () => {
 
+    const criteria = {
+      nameBeginsWith: 'Burger King',
+      category: 'BURGER',
+      ratingAtLeast: '3',
+    };
+
     beforeEach(() => {
       const {height, width} = DEVICES.Mobile;
       cy.viewport(width, height);
+
+      cy.fixture('restaurants')
+        .then(json => {
+          cy.intercept({
+            method: 'GET',
+            pathname: '/restaurants',
+            query: {
+              triedBefore: 'false',
+            },
+          }, json);
+          cy.intercept({
+            method: 'GET',
+            pathname: '/restaurants',
+            query: {
+              ...criteria,
+              triedBefore: 'true',
+            },
+          }, [json[1]]);
+        });
     });
 
     it('brief restaurants data is rendered in the table', () => {
@@ -238,7 +277,7 @@ describe('Restaurant search page', () => {
 
       cy.verifyTableHeaderCells('Name', 'Rating')
         .verifyTableRows([
-          ['Burger King City Centre', '5']
+          ['Burger King City Centre', '5'],
         ]);
     });
 

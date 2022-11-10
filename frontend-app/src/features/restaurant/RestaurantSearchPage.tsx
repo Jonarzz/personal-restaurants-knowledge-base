@@ -10,7 +10,7 @@ import {RestaurantsTable} from './RestaurantsTable';
 type SearchQuery = {
   nameBeginsWith?: string,
   category?: Category,
-  triedBefore?: boolean,
+  triedBefore: boolean,
   ratingAtLeast?: number
 };
 
@@ -18,8 +18,10 @@ export const RestaurantSearchPage = () => {
 
   const [restaurants, setRestaurants] = useState<RestaurantData[]>();
   const [modalRestaurant, setModalRestaurant] = useState<RestaurantData>();
+  const [formResetCounter, setFormResetCounter] = useState(0);
 
-  const searchRestaurants = ({nameBeginsWith, category, ratingAtLeast, triedBefore = false}: SearchQuery) => {
+  const searchRestaurants = ({nameBeginsWith, category, ratingAtLeast, triedBefore}: SearchQuery) => {
+    setRestaurants(undefined);
     restaurantsApi.queryRestaurantsByCriteria(nameBeginsWith, category, triedBefore, ratingAtLeast)
                   .then(({data}: { data: RestaurantData[] }) => setRestaurants(data));
   };
@@ -38,12 +40,17 @@ export const RestaurantSearchPage = () => {
   return (
     <>
       <Card title={cardTitle}>
-        <RestaurantsSearchForm onSubmit={searchRestaurants}/>
+        <RestaurantsSearchForm onSubmit={searchRestaurants}
+                               resetTrigger={formResetCounter}/>
         <RestaurantsTable restaurants={restaurants}
                           openRestaurantDetails={setModalRestaurant}/>
       </Card>
       {modalRestaurant && <RestaurantModal restaurantData={modalRestaurant}
-                                           onClose={() => setModalRestaurant(undefined)}/>}
+                                           onClose={() => setModalRestaurant(undefined)}
+                                           onSaveSuccess={() => {
+                                             setRestaurants(undefined);
+                                             setFormResetCounter(current => ++current);
+                                           }}/>}
     </>
   );
 };

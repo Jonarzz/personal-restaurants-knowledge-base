@@ -1,11 +1,12 @@
 import 'antd/dist/antd.dark.css';
 import {mount} from 'cypress/react18';
 import {
-  clickButton, clickSubmitButton, clickTriedBeforeModalSwitch, clickTriedBeforeSearchButton, getCategoriesModalField, getCategorySearchField, getModalTitle,
-  getNameModalField, getNameSearchField, getNotesModalField, getRatingModalField, getRatingSearchField, getReviewModalField, getSubmitButton, getTable,
-  getTriedBeforeModalSwitch, getTriedBeforeSearchButton, selectRatingInModal, selectSearchCategory, selectSearchRating, typeInCategoriesModalField,
-  typeInNameModalField, typeInNameSearchField, typeInNotesModalField, typeInReviewModalField, verifyNotesTooltip, verifyReviewTooltip, verifyTableHeaderCells,
-  verifyTableRows,
+  clickButton, clickSubmitButton, clickTriedBeforeModalSwitch, clickTriedBeforeSearchButton, closeNotification, getCategoriesModalField, getCategorySearchField,
+  getModalTitle, getNameModalField, getNameSearchField, getNotesModalField, getRatingModalField, getRatingSearchField, getReviewModalField, getSubmitButton,
+  getTable, getTriedBeforeModalSwitch, getTriedBeforeSearchButton, selectRatingInModal, selectSearchCategory, selectSearchRating, typeInCategoriesModalField,
+  typeInNameModalField, typeInNameSearchField, typeInNotesModalField, typeInReviewModalField, verifyNotesTooltip, verifyNotificationContent,
+  verifyNotificationHeader, verifyPrimaryModalButtonDisabled, verifyReviewTooltip, verifyRowNotesTooltip, verifyRowReviewTooltip, verifySearchFormEmpty,
+  verifyTableHeaderCells, verifyTableRows,
 } from './commands';
 
 declare global {
@@ -26,7 +27,13 @@ declare global {
       verifyTableHeaderCells: typeof verifyTableHeaderCells,
       verifyTableRows: typeof verifyTableRows,
       verifyReviewTooltip: typeof verifyReviewTooltip,
+      verifyRowReviewTooltip: typeof verifyRowReviewTooltip,
       verifyNotesTooltip: typeof verifyNotesTooltip,
+      verifyRowNotesTooltip: typeof verifyRowNotesTooltip,
+      verifySearchFormEmpty: typeof verifySearchFormEmpty,
+      verifyNotificationHeader: typeof verifyNotificationHeader,
+      verifyNotificationContent: typeof verifyNotificationContent,
+      closeNotification: typeof closeNotification,
       getModalTitle: typeof getModalTitle,
       getNameModalField: typeof getNameModalField,
       getCategoriesModalField: typeof getCategoriesModalField,
@@ -41,6 +48,7 @@ declare global {
       typeInNotesModalField: typeof typeInNotesModalField,
       clickTriedBeforeModalSwitch: typeof clickTriedBeforeModalSwitch,
       clickButton: typeof clickButton,
+      verifyPrimaryModalButtonDisabled: typeof verifyPrimaryModalButtonDisabled,
     }
   }
 }
@@ -61,7 +69,13 @@ Cypress.Commands.addAll({
   verifyTableHeaderCells,
   verifyTableRows,
   verifyReviewTooltip,
+  verifyRowReviewTooltip,
   verifyNotesTooltip,
+  verifyRowNotesTooltip,
+  verifySearchFormEmpty,
+  verifyNotificationHeader,
+  verifyNotificationContent,
+  closeNotification,
   getModalTitle,
   getNameModalField,
   getCategoriesModalField,
@@ -76,4 +90,5 @@ Cypress.Commands.addAll({
   typeInNotesModalField,
   clickTriedBeforeModalSwitch,
   clickButton,
+  verifyPrimaryModalButtonDisabled
 });

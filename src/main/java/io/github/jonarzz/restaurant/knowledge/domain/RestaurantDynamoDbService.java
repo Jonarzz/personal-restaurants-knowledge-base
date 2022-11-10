@@ -3,7 +3,6 @@ package io.github.jonarzz.restaurant.knowledge.domain;
 import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Attributes.*;
 import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantModification.*;
 import static io.github.jonarzz.restaurant.knowledge.technical.dynamodb.AttributesCreator.*;
-import static software.amazon.awssdk.services.dynamodb.model.AttributeAction.*;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.*;
 
 import lombok.extern.slf4j.*;
@@ -17,10 +16,6 @@ import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 @Slf4j
 class RestaurantDynamoDbService implements RestaurantService {
-
-    private static final AttributeValueUpdate DELETE_UPDATE = AttributeValueUpdate.builder()
-                                                                                  .action(DELETE)
-                                                                                  .build();
 
     private DynamoDbRepository<RestaurantItem, RestaurantKey> repository;
 
@@ -63,7 +58,7 @@ class RestaurantDynamoDbService implements RestaurantService {
             create(updatedItem);
             delete(restaurant);
         } else {
-            log.debug("Updating {}", restaurant);
+            log.debug("Updating {} with {}", restaurant, changes);
             repository.update(restaurant, changes.toAttributesCreator());
         }
         return Optional.of(updatedItem);
@@ -98,10 +93,6 @@ class RestaurantDynamoDbService implements RestaurantService {
         log.debug("Setting {} tried before flag to {}", restaurant, tried);
         Map<String, AttributeValueUpdate> updates = new HashMap<>();
         updates.put(TRIED_BEFORE, asUpdateAttribute(fromBool(tried)));
-        if (!tried) {
-            updates.put(RATING, DELETE_UPDATE);
-            updates.put(REVIEW, DELETE_UPDATE);
-        }
         repository.update(restaurant, updates);
     }
 

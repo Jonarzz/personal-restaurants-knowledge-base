@@ -1,49 +1,69 @@
-import {Form, Input, Modal, Select, Switch} from 'antd';
+import {Form, Input, Modal, notification, Select, Switch} from 'antd';
 import React, {useEffect, useState} from 'react';
-import {RestaurantData} from '../../api';
+import {Category, RestaurantData} from '../../api';
 import {restaurantEntryApi, restaurantsApi} from '../../api/ApiFacade';
 import {CATEGORY_SELECT_OPTIONS, RATING_SELECT_OPTIONS} from './common';
 
-type Props = { restaurantData: RestaurantData, onClose: Function };
+type Props = {
+  restaurantData: RestaurantData,
+  onClose: Function,
+  onSaveSuccess: Function
+};
 
-type FormData = Omit<RestaurantData, 'notes'> & { notes: string };
+export type FormData = Omit<RestaurantData, 'notes'> & { notes?: string };
 
 const formToRestaurantData = (values: FormData): RestaurantData => ({
   ...values,
   notes: values.notes?.split('\n'),
 });
 
-export const RestaurantModal = ({restaurantData, onClose}: Props) => {
+const categoriesAsStrings = (categories?: Set<Category>): string[] => Array.from(categories || []);
+
+const openRestaurantSavedNotification = (header: string) =>
+  notification.success({
+    message: header,
+    description: 'You can find the restaurant using the search form',
+    duration: 2
+  });
+
+export const RestaurantModal = ({restaurantData, onClose, onSaveSuccess}: Props) => {
 
   const [name, setName] = useState(restaurantData.name);
+  const [categories, setCategories] = useState(categoriesAsStrings(restaurantData.categories));
   const [triedBefore, setTriedBefore] = useState(restaurantData.triedBefore);
 
   const [modalForm] = Form.useForm();
 
-  // TODO use the responses to update the state
+  // TODO loader
   // TODO display API call errors (notifications / in modal)
 
   useEffect(() => {
     setName(restaurantData.name);
+    setCategories(categoriesAsStrings(restaurantData.categories));
     setTriedBefore(restaurantData.triedBefore);
   }, [restaurantData]);
 
   const onValuesChange = (changedFields: FormData, values: FormData) => {
     setName(values.name);
+    setCategories(categoriesAsStrings(values.categories));
     setTriedBefore(values.triedBefore);
   };
 
   const createRestaurant = (formData: FormData) => {
     restaurantsApi.createRestaurant(formToRestaurantData(formData))
-                  .then(response => {
-                    console.log('Created', response);
+                  .then(() => {
+                    onClose();
+                    onSaveSuccess();
+                    openRestaurantSavedNotification('Restaurant created');
                   });
   };
 
   const updateRestaurant = (restaurantName: string, formData: FormData) => {
     restaurantEntryApi.updateRestaurant(restaurantName, formToRestaurantData(formData))
-                      .then(response => {
-                        console.log('Updated', response);
+                      .then(() => {
+                        onClose();
+                        onSaveSuccess();
+                        openRestaurantSavedNotification('Restaurant updated');
                       });
   };
 
@@ -64,11 +84,8 @@ export const RestaurantModal = ({restaurantData, onClose}: Props) => {
     <Modal open
            title={restaurantData.name || 'New restaurant'}
            okText={restaurantData.name ? 'Update' : 'Create'}
-           okButtonProps={{disabled: !name}}
-           onOk={() => {
-             modalForm.submit();
-             onClose();
-           }}
+           okButtonProps={{disabled: !name || !categories?.length}}
+           onOk={() => modalForm.submit()}
            onCancel={() => onClose()}>
 
       <Form form={modalForm}
@@ -81,7 +98,7 @@ export const RestaurantModal = ({restaurantData, onClose}: Props) => {
         </Form.Item>
 
         <Form.Item name="categories" initialValue={restaurantData.categories}>
-          <Select mode="multiple"
+          <Select mode="multiple" allowClear
                   placeholder="Categories">
             {CATEGORY_SELECT_OPTIONS}
           </Select>

@@ -11,7 +11,7 @@ import io.github.jonarzz.restaurant.knowledge.model.*;
 import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 @Builder
-record RestaurantItem(
+public record RestaurantItem(
         String userId,
         String restaurantName,
         @Singular Set<Category> categories,
@@ -21,22 +21,23 @@ record RestaurantItem(
         @Singular List<String> notes
 ) implements DynamoDbTable<RestaurantKey> {
 
-    static class Attributes {
+    public static class Attributes {
 
         static final String USER_ID = "userId";
         static final String NAME_LOWERCASE = "nameLowercase";
         static final String RESTAURANT_NAME = "restaurantName";
         static final String CATEGORIES = "categories";
-        static final String TRIED_BEFORE = "triedBefore";
-        static final String RATING = "rating";
-        static final String REVIEW = "review";
+        // TODO clean up the visibiltiy
+        public static final String TRIED_BEFORE = "triedBefore";
+        public static final String RATING = "rating";
+        public static final String REVIEW = "review";
         static final String NOTES = "notes";
 
         private Attributes() {
         }
     }
 
-    RestaurantItem {
+    public RestaurantItem {
         if (restaurantName == null || restaurantName.isBlank()) {
             throw new IllegalArgumentException("Restaurant name cannot be blank");
         }

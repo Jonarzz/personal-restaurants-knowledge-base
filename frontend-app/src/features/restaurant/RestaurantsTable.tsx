@@ -10,7 +10,7 @@ type Props = {
   openRestaurantDetails: Function
 };
 
-const renderCategories = (value: string[]) => value.map((category, index) => {
+const renderCategories = (value: string[]) => value.sort().map((category, index) => {
   for (let [name, value] of Object.entries(Category)) {
     if (category === value) {
       let categoryName = prettifyCategoryName(name);
@@ -24,14 +24,14 @@ const renderCategories = (value: string[]) => value.map((category, index) => {
   return null;
 }).filter(e => e).join(', ');
 
-const createPopover = (popoverContent: any) => (
+const createPopover = (triggerText: string, popoverContent: any) => (
   <Popover content={popoverContent}>
-    <div style={{cursor: 'pointer'}}>Show</div>
+    <div style={{cursor: 'pointer'}}>{triggerText}</div>
   </Popover>
 );
 
 const renderNotes = (value: string[]) => value?.length
-                                         ? createPopover(<ul>{
+                                         ? createPopover('Show notes', <ul>{
                                            value.map(line => <li>{line}</li>)
                                          }</ul>)
                                          : null;
@@ -65,7 +65,7 @@ export const RestaurantsTable = ({restaurants, openRestaurantDetails}: Props) =>
   }, {
     title: 'Review',
     dataIndex: 'review',
-    render: (value: string) => value ? createPopover(value) : null,
+    render: (value: string) => value ? createPopover('Show review', value) : null,
     responsive: ['md' as Breakpoint],
   }, {
     title: 'Notes',
