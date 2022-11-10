@@ -27,7 +27,8 @@ describe('restaurants page', () => {
       .typeInCategoriesModalField('past')
       .clickButton('Create')
       .should('not.exist')
-      .wait(100); // TODO fixup responsive rendering issues
+      .closeNotification()
+      .wait(500); // TODO fixup responsive rendering issues
 
     cy.clickSubmitButton()
       .verifyTableRows([
@@ -54,7 +55,8 @@ describe('restaurants page', () => {
       .typeInNotesModalField(notes)
       .clickButton('Create')
       .should('not.exist')
-      .wait(100); // TODO fixup responsive rendering issues
+      .closeNotification()
+      .wait(500); // TODO fixup responsive rendering issues
 
     cy.clickTriedBeforeSearchButton()
       .clickSubmitButton()
@@ -80,7 +82,8 @@ describe('restaurants page', () => {
       .typeInNotesModalField(notes)
       .clickButton('Update')
       .should('not.exist')
-      .wait(100); // TODO fixup responsive rendering issues
+      .closeNotification()
+      .wait(500); // TODO fixup responsive rendering issues
 
     cy.clickTriedBeforeSearchButton()
       .clickSubmitButton()
@@ -98,7 +101,8 @@ describe('restaurants page', () => {
       .getNotesModalField()
       .clear()
       .clickButton('Update')
-      .should('not.exist');
+      .should('not.exist')
+      .closeNotification();
 
     cy.clickSubmitButton()
       .verifyTableRows([

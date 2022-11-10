@@ -1,6 +1,7 @@
 package io.github.jonarzz.restaurant.knowledge.domain;
 
 import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Attributes.*;
+import static java.lang.Boolean.*;
 import static java.util.Optional.*;
 import static java.util.function.Predicate.*;
 
@@ -13,6 +14,9 @@ import io.github.jonarzz.restaurant.knowledge.model.*;
 import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 class RestaurantModification {
+
+    static final AttributeValue EMPTY_REVIEW = AttributeValue.fromS("");
+    static final AttributeValue EMPTY_RATING = AttributeValue.fromN("0");
 
     private final RestaurantItem base;
     private final RestaurantData updateData;
@@ -73,6 +77,11 @@ class RestaurantModification {
                 restaurantName = updatedName;
                 empty = false;
             }
+            var updatedTriedBefore = updateData.getTriedBefore();
+            if (updatedTriedBefore != null && base.triedBefore() != updatedTriedBefore) {
+                triedBefore = updatedTriedBefore;
+                empty = false;
+            }
             var updatedReview = updateData.getReview();
             if (!Objects.equals(base.review(), updatedReview)) {
                 review = updatedReview;
@@ -83,11 +92,6 @@ class RestaurantModification {
                 rating = Optional.ofNullable(updatedRating)
                                  .map(Object::toString)
                                  .orElse(null);
-                empty = false;
-            }
-            var updatedTriedBefore = updateData.getTriedBefore();
-            if (updatedTriedBefore != null && base.triedBefore() != updatedTriedBefore) {
-                triedBefore = updatedTriedBefore;
                 empty = false;
             }
             var updatedNotes = updateData.getNotes();
@@ -114,11 +118,16 @@ class RestaurantModification {
                 creator.putIfPresent(RESTAURANT_NAME, restaurantName, AttributeValue::fromS)
                        .putIfPresent(NAME_LOWERCASE, restaurantName.toLowerCase(), AttributeValue::fromS);
             }
-            return creator.putIfPresent(REVIEW, review, AttributeValue::fromS)
-                          .putIfPresent(RATING, rating, AttributeValue::fromN)
-                          .putIfPresent(TRIED_BEFORE, triedBefore, AttributeValue::fromBool)
-                          .putOrEmpty(NOTES, notes)
-                          .putIfNotEmpty(CATEGORIES, categories, Category::getValue);
+            if (FALSE.equals(triedBefore)) {
+                creator.put(REVIEW, EMPTY_REVIEW)
+                       .put(RATING, EMPTY_RATING);
+            } else if (TRUE.equals(triedBefore) || base.triedBefore()) {
+                creator.putIfPresent(REVIEW, review, AttributeValue::fromS)
+                       .putIfPresent(RATING, rating, AttributeValue::fromN);
+            }
+            return creator.putIfPresent(TRIED_BEFORE, triedBefore, AttributeValue::fromBool)
+                          .putIfNotEmpty(CATEGORIES, categories, Category::getValue)
+                          .putOrEmpty(NOTES, notes);
         }
 
         RestaurantItem applied() {

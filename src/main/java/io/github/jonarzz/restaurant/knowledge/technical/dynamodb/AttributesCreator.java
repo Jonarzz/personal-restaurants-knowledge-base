@@ -45,8 +45,13 @@ public class AttributesCreator {
                                    .build();
     }
 
+    public AttributesCreator put(String attributeName, AttributeValue attributeValue) {
+        attributes.put(attributeName, attributeValue);
+        return this;
+    }
+
     public <T> AttributesCreator putIfPresent(String attributeName, T nullable,
-                                       Function<T, AttributeValue> attributeCreator) {
+                                              Function<T, AttributeValue> attributeCreator) {
         Optional.ofNullable(nullable)
                 .map(attributeCreator)
                 .ifPresent(attribute -> attributes.put(attributeName, attribute));
@@ -86,4 +91,5 @@ public class AttributesCreator {
                                                                      .value(entry.getValue())
                                                                      .build()));
     }
+
 }

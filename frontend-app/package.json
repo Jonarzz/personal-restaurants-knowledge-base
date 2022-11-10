@@ -18,7 +18,8 @@
     "@types/react": "^18.0.21",
     "@types/react-dom": "^18.0.6",
     "cypress": "^10.10.0",
-    "react-scripts": "5.0.1"
+    "react-scripts": "5.0.1",
+    "source-map-explorer": "^2.5.3"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -26,6 +27,7 @@
     "eject": "react-scripts eject",
     "test": "npx cypress run --component --config video=false",
     "e2e-test": "npx cypress run --config video=false",
+    "analyze": "source-map-explorer 'build/static/js/*.js'",
     "openapi:generate": "openapi-generator-cli generate -i ../src/main/resources/api/openapi.yaml -g typescript-axios -o src/api"
   },
   "eslintConfig": {

@@ -19,12 +19,22 @@ const formToRestaurantData = (values: FormData): RestaurantData => ({
 
 const categoriesAsStrings = (categories?: Set<Category>): string[] => Array.from(categories || []);
 
+const notificationDisplayDurationSeconds = 2;
 const openRestaurantSavedNotification = (header: string) =>
   notification.success({
     message: header,
     description: 'You can find the restaurant using the search form',
-    duration: 2
+    duration: notificationDisplayDurationSeconds,
   });
+
+const handleApiError = (error: any) => {
+  console.error(error);
+  notification.error({
+    message: 'Error',
+    description: 'An error occurred. Please, contact the administrator.',
+    duration: notificationDisplayDurationSeconds
+  });
+};
 
 export const RestaurantModal = ({restaurantData, onClose, onSaveSuccess}: Props) => {
 
@@ -32,10 +42,9 @@ export const RestaurantModal = ({restaurantData, onClose, onSaveSuccess}: Props)
   const [categories, setCategories] = useState(categoriesAsStrings(restaurantData.categories));
   const [triedBefore, setTriedBefore] = useState(restaurantData.triedBefore);
 
-  const [modalForm] = Form.useForm();
+  const [loading, setLoading] = useState(false);
 
-  // TODO loader
-  // TODO display API call errors (notifications / in modal)
+  const [modalForm] = Form.useForm();
 
   useEffect(() => {
     setName(restaurantData.name);
@@ -50,21 +59,27 @@ export const RestaurantModal = ({restaurantData, onClose, onSaveSuccess}: Props)
   };
 
   const createRestaurant = (formData: FormData) => {
+    setLoading(true);
     restaurantsApi.createRestaurant(formToRestaurantData(formData))
                   .then(() => {
                     onClose();
                     onSaveSuccess();
                     openRestaurantSavedNotification('Restaurant created');
-                  });
+                  })
+                  .catch(handleApiError)
+                  .finally(() => setLoading(false));
   };
 
   const updateRestaurant = (restaurantName: string, formData: FormData) => {
+    setLoading(true);
     restaurantEntryApi.updateRestaurant(restaurantName, formToRestaurantData(formData))
                       .then(() => {
                         onClose();
                         onSaveSuccess();
                         openRestaurantSavedNotification('Restaurant updated');
-                      });
+                      })
+                      .catch(handleApiError)
+                      .finally(() => setLoading(false));
   };
 
   const submitForm = (values: any) => {
@@ -80,11 +95,16 @@ export const RestaurantModal = ({restaurantData, onClose, onSaveSuccess}: Props)
     }
   };
 
+  // TODO restaurant deletion
+
   return (
     <Modal open
            title={restaurantData.name || 'New restaurant'}
            okText={restaurantData.name ? 'Update' : 'Create'}
-           okButtonProps={{disabled: !name || !categories?.length}}
+           okButtonProps={{
+             loading,
+             disabled: !name || !categories?.length,
+           }}
            onOk={() => modalForm.submit()}
            onCancel={() => onClose()}>
 

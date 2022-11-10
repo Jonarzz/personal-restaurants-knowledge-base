@@ -1,8 +1,28 @@
-export const getNameSearchField = () => cy.get('form input#nameBeginsWith');
-export const getCategorySearchField = () => cy.get('form input#category');
-export const getRatingSearchField = () => cy.get('form input#ratingAtLeast');
-export const getTriedBeforeSearchButton = () => cy.get('form button#triedBefore');
-export const getSubmitButton = () => cy.get('form button[type="submit"]');
+// TODO remove retrying after this is fixed: https://github.com/cypress-io/cypress/issues/7306
+const getAttached = (selector: string) => {
+  const isAttached = (resolve: Function, count = 0) => {
+    const el = Cypress.$(selector);
+    const is = Cypress.dom.isAttached(el);
+    if (!is) {
+      console.log(selector, el);
+    }
+    count = is ? ++count : 0;
+    if (count >= 3) {
+      return resolve(el);
+    }
+    setTimeout(() => isAttached(resolve, count), 30);
+  };
+  // wrap, so we can chain cypress commands off the result
+  return cy.wrap(null)
+           .then(() => new Cypress.Promise(resolve => isAttached(resolve, 0))
+             .then(el => cy.wrap(el)));
+};
+
+export const getNameSearchField = () => getAttached('form input#nameBeginsWith');
+export const getCategorySearchField = () => getAttached('form input#category');
+export const getRatingSearchField = () => getAttached('form input#ratingAtLeast');
+export const getTriedBeforeSearchButton = () => getAttached('form button#triedBefore');
+export const getSubmitButton = () => getAttached('form button[type="submit"]');
 export const getTable = () => cy.get('table');
 
 export const typeInNameSearchField = (text: string) => getNameSearchField().type(text);

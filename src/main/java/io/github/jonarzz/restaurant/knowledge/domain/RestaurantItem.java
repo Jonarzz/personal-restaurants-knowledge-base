@@ -2,6 +2,7 @@ package io.github.jonarzz.restaurant.knowledge.domain;
 
 import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantKey.*;
 import static java.lang.Boolean.*;
+import static org.springframework.util.StringUtils.*;
 
 import lombok.*;
 
@@ -11,7 +12,7 @@ import io.github.jonarzz.restaurant.knowledge.model.*;
 import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 @Builder
-public record RestaurantItem(
+record RestaurantItem(
         String userId,
         String restaurantName,
         @Singular Set<Category> categories,
@@ -21,23 +22,22 @@ public record RestaurantItem(
         @Singular List<String> notes
 ) implements DynamoDbTable<RestaurantKey> {
 
-    public static class Attributes {
+    static class Attributes {
 
         static final String USER_ID = "userId";
         static final String NAME_LOWERCASE = "nameLowercase";
         static final String RESTAURANT_NAME = "restaurantName";
         static final String CATEGORIES = "categories";
-        // TODO clean up the visibiltiy
-        public static final String TRIED_BEFORE = "triedBefore";
-        public static final String RATING = "rating";
-        public static final String REVIEW = "review";
+        static final String TRIED_BEFORE = "triedBefore";
+        static final String RATING = "rating";
+        static final String REVIEW = "review";
         static final String NOTES = "notes";
 
         private Attributes() {
         }
     }
 
-    public RestaurantItem {
+    RestaurantItem {
         if (restaurantName == null || restaurantName.isBlank()) {
             throw new IllegalArgumentException("Restaurant name cannot be blank");
         }
@@ -69,8 +69,11 @@ public record RestaurantItem(
                 .name(restaurantName)
                 .categories(categories)
                 .triedBefore(triedBefore)
-                .rating(rating)
-                .review(review)
+                .rating(Optional.ofNullable(rating)
+                                // rating = 0 - empty value in DynamoDB
+                                .filter(value -> value > 0)
+                                .orElse(null))
+                .review(hasText(review) ? review : null)
                 .notes(notes);
     }
 

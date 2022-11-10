@@ -93,6 +93,10 @@ class RestaurantDynamoDbService implements RestaurantService {
         log.debug("Setting {} tried before flag to {}", restaurant, tried);
         Map<String, AttributeValueUpdate> updates = new HashMap<>();
         updates.put(TRIED_BEFORE, asUpdateAttribute(fromBool(tried)));
+        if (!tried) {
+            updates.put(RATING, asUpdateAttribute(EMPTY_RATING));
+            updates.put(REVIEW, asUpdateAttribute(EMPTY_REVIEW));
+        }
         repository.update(restaurant, updates);
     }
 

@@ -525,7 +525,7 @@ class RestaurantDynamoDbServiceTest {
 
         assertRestaurantFound(restaurantName)
                 .returns(false, RestaurantItem::triedBefore)
-                .returns(null, RestaurantItem::rating);
+                .returns(0, RestaurantItem::rating);
     }
 
     @Test
@@ -552,7 +552,7 @@ class RestaurantDynamoDbServiceTest {
 
         assertRestaurantFound(restaurantName)
                 .returns(false, RestaurantItem::triedBefore)
-                .returns(null, RestaurantItem::review);
+                .returns("", RestaurantItem::review);
     }
 
     @Test
@@ -565,12 +565,34 @@ class RestaurantDynamoDbServiceTest {
 
         assertRestaurantFound(restaurantName)
                 .returns(true, RestaurantItem::triedBefore)
-                .returns(null, RestaurantItem::rating)
-                .returns(null, RestaurantItem::review);
+                .returns(0, RestaurantItem::rating)
+                .returns("", RestaurantItem::review);
     }
 
     @Test
     @Order(100)
+    void updateRestaurant_removeValues() {
+        var categories = Set.of(BURGER, FAST_FOOD);
+        var updateData = new RestaurantData()
+                .categories(categories)
+                .rating(null)
+                .review(null)
+                .notes(null);
+
+        actOn(NOT_TRIED_RESTAURANT_NAME,
+              restaurant -> restaurantService.update(restaurant, updateData));
+
+        assertRestaurantFound(NOT_TRIED_RESTAURANT_NAME)
+                .returns(TEST_USER, RestaurantItem::userId)
+                .returns(categories, RestaurantItem::categories)
+                .returns(true, RestaurantItem::triedBefore)
+                .returns(0, RestaurantItem::rating)
+                .returns("", RestaurantItem::review)
+                .returns(List.of(), RestaurantItem::notes);
+    }
+
+    @Test
+    @Order(101)
     void updateRestaurant_newValues() {
         var categories = Set.of(PIZZA, PASTA, OTHER);
         var rating = 9;
@@ -595,25 +617,61 @@ class RestaurantDynamoDbServiceTest {
     }
 
     @Test
-    @Order(100)
-    void updateRestaurant_removeValues() {
-        var categories = Set.of(BURGER, FAST_FOOD);
+    @Order(102)
+    void updateRestaurant_markAsNotTriedBefore() {
         var updateData = new RestaurantData()
-                .categories(categories)
-                .rating(null)
-                .review(null)
-                .notes(null);
+                .triedBefore(false);
 
         actOn(NOT_TRIED_RESTAURANT_NAME,
               restaurant -> restaurantService.update(restaurant, updateData));
 
         assertRestaurantFound(NOT_TRIED_RESTAURANT_NAME)
                 .returns(TEST_USER, RestaurantItem::userId)
-                .returns(categories, RestaurantItem::categories)
+                .returns(Set.of(PIZZA, PASTA, OTHER), RestaurantItem::categories)
+                .returns(false, RestaurantItem::triedBefore)
+                .returns(0, RestaurantItem::rating)
+                .returns("", RestaurantItem::review)
+                // no notes on request => cleared
+                .returns(List.of(),RestaurantItem::notes);
+    }
+
+    @Test
+    @Order(103)
+    void updateRestaurant_markAsTriedBeforeWithReviewAndRating() {
+        var rating = 7;
+        var review = "Another test review";
+        var updateData = new RestaurantData()
+                .triedBefore(true)
+                .rating(rating)
+                .review(review);
+
+        actOn(NOT_TRIED_RESTAURANT_NAME,
+              restaurant -> restaurantService.update(restaurant, updateData));
+
+        assertRestaurantFound(NOT_TRIED_RESTAURANT_NAME)
+                .returns(TEST_USER, RestaurantItem::userId)
                 .returns(true, RestaurantItem::triedBefore)
-                .returns(null, RestaurantItem::rating)
-                .returns(null, RestaurantItem::review)
-                .returns(List.of(), RestaurantItem::notes);
+                .returns(rating, RestaurantItem::rating)
+                .returns(review, RestaurantItem::review);
+    }
+
+    @Test
+    @Order(104)
+    void updateRestaurant_changeRatingAndReviewForTriedBefore() {
+        var rating = 3;
+        var review = "Changed review text";
+        var updateData = new RestaurantData()
+                .rating(rating)
+                .review(review);
+
+        actOn(NOT_TRIED_RESTAURANT_NAME,
+              restaurant -> restaurantService.update(restaurant, updateData));
+
+        assertRestaurantFound(NOT_TRIED_RESTAURANT_NAME)
+                .returns(TEST_USER, RestaurantItem::userId)
+                .returns(true, RestaurantItem::triedBefore)
+                .returns(rating, RestaurantItem::rating)
+                .returns(review, RestaurantItem::review);
     }
 
     private void actOn(String restaurantName, Consumer<RestaurantItem> action) {

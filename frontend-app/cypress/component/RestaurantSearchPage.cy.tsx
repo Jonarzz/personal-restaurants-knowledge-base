@@ -80,6 +80,24 @@ describe('Restaurant search page', () => {
                   .should('not.exist');
               });
 
+              it('error during restaurant creation', () => {
+                cy.intercept({method: 'POST', url: '/restaurants', times: 1}, req => req.reply(400))
+                  .as('restaurantCreation');
+
+                cy.mount(<RestaurantSearchPage/>)
+                  .clickButton('Add');
+
+                cy.typeInNameModalField('Trattoria Napoli')
+                  .typeInCategoriesModalField('piz')
+                  .typeInCategoriesModalField('past')
+                  .clickButton('Create');
+
+                cy.wait('@restaurantCreation');
+
+                cy.verifyNotificationHeader('Error')
+                  .verifyNotificationContent('An error occurred. Please, contact the administrator.');
+              });
+
               it('edit restaurant not visited before after trying out', () => {
                 const name = 'Super Tasty Burger',
                   triedBefore = true,

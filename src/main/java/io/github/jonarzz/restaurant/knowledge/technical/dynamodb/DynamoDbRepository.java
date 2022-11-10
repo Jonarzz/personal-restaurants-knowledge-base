@@ -1,8 +1,6 @@
 package io.github.jonarzz.restaurant.knowledge.technical.dynamodb;
 
-import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Attributes.*;
 import static io.github.jonarzz.restaurant.knowledge.technical.cache.CacheConfig.*;
-import static software.amazon.awssdk.services.dynamodb.model.AttributeAction.*;
 
 import org.springframework.cache.annotation.*;
 import software.amazon.awssdk.services.dynamodb.*;
@@ -12,10 +10,6 @@ import java.util.*;
 
 @CacheConfig(cacheNames = RESTAURANTS_CACHE_NAME)
 public class DynamoDbRepository<T extends DynamoDbTable<K>, K extends DynamoDbKey> {
-
-    private static final AttributeValueUpdate DELETE_UPDATE = AttributeValueUpdate.builder()
-                                                                                  .action(DELETE)
-                                                                                  .build();
 
     private String tableName;
     private ItemMapper<T> itemMapper;
@@ -72,12 +66,6 @@ public class DynamoDbRepository<T extends DynamoDbTable<K>, K extends DynamoDbKe
 
     @CacheEvict(key = "#item.getKey()")
     public void update(T item, Map<String, AttributeValueUpdate> updates) {
-        // TODO refactor
-        var triedBeforeUpdate = updates.get(TRIED_BEFORE);
-        if (triedBeforeUpdate != null && !triedBeforeUpdate.value().bool()) {
-            updates.put(RATING, DELETE_UPDATE);
-            updates.put(REVIEW, DELETE_UPDATE);
-        }
         var request = UpdateItemRequest.builder()
                                        .tableName(tableName)
                                        .key(item.getKey()
