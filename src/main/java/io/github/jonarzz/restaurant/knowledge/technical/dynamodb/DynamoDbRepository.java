@@ -1,27 +1,25 @@
 package io.github.jonarzz.restaurant.knowledge.technical.dynamodb;
 
-import static io.github.jonarzz.restaurant.knowledge.technical.cache.CacheConfig.*;
-
-import org.springframework.cache.annotation.*;
+import lombok.extern.slf4j.*;
 import software.amazon.awssdk.services.dynamodb.*;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
+import javax.annotation.*;
 import java.util.*;
 
-@CacheConfig(cacheNames = RESTAURANTS_CACHE_NAME)
-public class DynamoDbRepository<T extends DynamoDbTable<K>, K extends DynamoDbKey> {
+@Slf4j
+public abstract class DynamoDbRepository<T extends DynamoDbTable<K>, K extends DynamoDbKey> {
 
     private String tableName;
     private ItemMapper<T> itemMapper;
     private DynamoDbClient client;
 
-    public DynamoDbRepository(String tableName, ItemMapper<T> itemMapper, DynamoDbClient client) {
+    protected DynamoDbRepository(String tableName, ItemMapper<T> itemMapper, DynamoDbClient client) {
         this.tableName = tableName;
         this.itemMapper = itemMapper;
         this.client = client;
     }
 
-    @Cacheable
     public Optional<T> findByKey(K key) {
         var request = GetItemRequest.builder()
                                     .tableName(tableName)
@@ -54,7 +52,6 @@ public class DynamoDbRepository<T extends DynamoDbTable<K>, K extends DynamoDbKe
                      .toList();
     }
 
-    @CacheEvict(key = "#item.getKey()")
     public void create(T item) {
         var request = PutItemRequest.builder()
                                     .tableName(tableName)
@@ -64,7 +61,6 @@ public class DynamoDbRepository<T extends DynamoDbTable<K>, K extends DynamoDbKe
         client.putItem(request);
     }
 
-    @CacheEvict(key = "#item.getKey()")
     public void update(T item, Map<String, AttributeValueUpdate> updates) {
         var request = UpdateItemRequest.builder()
                                        .tableName(tableName)
@@ -75,12 +71,10 @@ public class DynamoDbRepository<T extends DynamoDbTable<K>, K extends DynamoDbKe
         client.updateItem(request);
     }
 
-    @CacheEvict(key = "#item.getKey()")
     public void update(T item, AttributesCreator attributesCreator) {
         update(item, attributesCreator.toUpdateAttributes());
     }
 
-    @CacheEvict(key = "#item.getKey()")
     public void delete(T item) {
         var request = DeleteItemRequest.builder()
                                        .tableName(tableName)
@@ -88,5 +82,16 @@ public class DynamoDbRepository<T extends DynamoDbTable<K>, K extends DynamoDbKe
                                                 .asAttributes())
                                        .build();
         client.deleteItem(request);
+    }
+
+    protected abstract CreateTableRequest prepareCreateTableRequest();
+
+    @PostConstruct
+    void createTable() {
+        try {
+            client.createTable(prepareCreateTableRequest());
+        } catch (ResourceInUseException exception) {
+            log.info("Tried to create table {}, but it already exists", tableName);
+        }
     }
 }

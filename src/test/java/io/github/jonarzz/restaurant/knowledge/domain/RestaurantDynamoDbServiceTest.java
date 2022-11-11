@@ -15,8 +15,6 @@ import org.junit.jupiter.params.provider.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.boot.test.context.*;
 import org.springframework.boot.test.mock.mockito.*;
-import org.springframework.security.authentication.*;
-import org.springframework.security.core.context.*;
 import org.springframework.test.context.*;
 import org.testcontainers.containers.*;
 import org.testcontainers.junit.jupiter.Container;
@@ -27,15 +25,16 @@ import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
 
+import io.github.jonarzz.restaurant.knowledge.*;
 import io.github.jonarzz.restaurant.knowledge.model.*;
-import io.github.jonarzz.restaurant.knowledge.technical.cache.*;
+import io.github.jonarzz.restaurant.knowledge.technical.auth.*;
 import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 @Testcontainers
 @SpringBootTest(
         webEnvironment = NONE,
         classes = {
-                DynamoDbConfig.class, RestaurantEntryManagementConfig.class, CacheConfig.class
+                DynamoDbClientFactory.class, RestaurantDomainConfig.class, CacheConfig.class
         }
 )
 @TestPropertySource(properties = {
@@ -711,7 +710,6 @@ class RestaurantDynamoDbServiceTest {
     }
 
     private static void setUpSecurityContext(String user) {
-        SecurityContextHolder.getContext()
-                             .setAuthentication(new TestingAuthenticationToken(user, null));
+        SecurityContext.setUserId(user);
     }
 }

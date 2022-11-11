@@ -4,7 +4,7 @@ import java.util.*;
 
 import io.github.jonarzz.restaurant.knowledge.model.*;
 
-interface RestaurantService {
+public interface RestaurantService {
 
     Optional<RestaurantItem> fetch(String restaurantName);
 

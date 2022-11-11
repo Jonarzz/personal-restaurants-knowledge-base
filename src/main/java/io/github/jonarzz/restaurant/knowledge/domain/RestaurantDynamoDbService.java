@@ -12,14 +12,13 @@ import java.util.*;
 import java.util.stream.Stream;
 
 import io.github.jonarzz.restaurant.knowledge.model.*;
-import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 @Slf4j
-class RestaurantDynamoDbService implements RestaurantService {
+public class RestaurantDynamoDbService implements RestaurantService {
 
-    private DynamoDbRepository<RestaurantItem, RestaurantKey> repository;
+    private RestaurantRepository repository;
 
-    RestaurantDynamoDbService(DynamoDbRepository<RestaurantItem, RestaurantKey> repository) {
+    public RestaurantDynamoDbService(RestaurantRepository repository) {
         this.repository = repository;
     }
 

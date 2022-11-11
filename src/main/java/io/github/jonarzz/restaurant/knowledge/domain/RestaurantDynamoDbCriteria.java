@@ -1,7 +1,7 @@
 package io.github.jonarzz.restaurant.knowledge.domain;
 
 import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Attributes.*;
-import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantKey.*;
+import static io.github.jonarzz.restaurant.knowledge.technical.auth.SecurityContext.*;
 import static io.github.jonarzz.restaurant.knowledge.technical.dynamodb.AttributesCreator.*;
 import static java.lang.Boolean.*;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.*;
@@ -24,7 +24,7 @@ class RestaurantDynamoDbCriteria implements DynamoDbQueryCriteria {
         Map<String, Condition> conditions = new HashMap<>();
         conditions.put(USER_ID, Condition.builder()
                                          .comparisonOperator(EQ)
-                                         .attributeValueList(fromS(contextUserId()))
+                                         .attributeValueList(fromS(getUserId()))
                                          .build());
         var nameBeginning = criteria.nameBeginsWith();
         if (nameBeginning != null) {

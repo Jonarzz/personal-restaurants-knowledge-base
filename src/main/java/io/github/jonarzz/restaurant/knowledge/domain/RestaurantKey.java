@@ -3,11 +3,11 @@ package io.github.jonarzz.restaurant.knowledge.domain;
 import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantItem.Attributes.*;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.*;
 
-import org.springframework.security.core.context.*;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.util.*;
 
+import io.github.jonarzz.restaurant.knowledge.technical.auth.*;
 import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 record RestaurantKey(
@@ -17,7 +17,7 @@ record RestaurantKey(
 
     RestaurantKey(String userId, String nameLowercase) {
         if (userId == null) {
-            userId = contextUserId();
+            userId = SecurityContext.getUserId();
         }
         this.userId = userId;
         this.nameLowercase = nameLowercase.toLowerCase();
@@ -33,12 +33,6 @@ record RestaurantKey(
                 USER_ID, fromS(userId),
                 NAME_LOWERCASE, fromS(nameLowercase)
         );
-    }
-
-    static String contextUserId() {
-        return SecurityContextHolder.getContext()
-                                    .getAuthentication()
-                                    .getName();
     }
 
 }

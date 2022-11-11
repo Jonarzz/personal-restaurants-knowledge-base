@@ -1,4 +1,4 @@
-package io.github.jonarzz.restaurant.knowledge.domain;
+package io.github.jonarzz.restaurant.knowledge.api;
 
 import static java.nio.charset.StandardCharsets.*;
 import static org.springframework.http.HttpStatus.*;
@@ -12,18 +12,18 @@ import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
 
-import io.github.jonarzz.restaurant.knowledge.api.*;
+import io.github.jonarzz.restaurant.knowledge.domain.*;
 import io.github.jonarzz.restaurant.knowledge.model.*;
 
 @RestController
-        // @PreAuthorize("isAuthenticated()")
-class RestaurantController implements RestaurantsApi {
+// @PreAuthorize("isAuthenticated()")
+public class RestaurantController implements RestaurantsApi {
 
     private static final String PATH = "/restaurants";
 
     private RestaurantService restaurantService;
 
-    RestaurantController(RestaurantService restaurantService) {
+    public RestaurantController(RestaurantService restaurantService) {
         this.restaurantService = restaurantService;
     }
 

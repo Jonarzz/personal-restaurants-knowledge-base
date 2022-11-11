@@ -1,4 +1,4 @@
-package io.github.jonarzz.restaurant.knowledge.technical.cache;
+package io.github.jonarzz.restaurant.knowledge;
 
 import org.springframework.cache.*;
 import org.springframework.cache.annotation.*;

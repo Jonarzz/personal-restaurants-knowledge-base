@@ -5,14 +5,14 @@ import lombok.*;
 import io.github.jonarzz.restaurant.knowledge.model.*;
 
 @Builder
-record RestaurantQueryCriteria(
+public record RestaurantQueryCriteria(
         String nameBeginsWith,
         Category category,
         Boolean triedBefore,
         Integer ratingAtLeast
 ) {
 
-    boolean isEmpty() {
+    public boolean isEmpty() {
         return nameBeginsWith == null
                && category == null
                && triedBefore == null

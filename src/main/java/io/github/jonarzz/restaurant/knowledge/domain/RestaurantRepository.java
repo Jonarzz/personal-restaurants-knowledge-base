@@ -1,39 +1,62 @@
-package io.github.jonarzz.restaurant.knowledge.technical.dynamodb;
+package io.github.jonarzz.restaurant.knowledge.domain;
 
+import static io.github.jonarzz.restaurant.knowledge.CacheConfig.*;
 import static software.amazon.awssdk.services.dynamodb.model.KeyType.*;
 import static software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType.*;
 
-import lombok.extern.slf4j.*;
+import org.springframework.cache.annotation.*;
 import software.amazon.awssdk.services.dynamodb.*;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
-import javax.annotation.*;
+import java.util.*;
 
-@Slf4j
-class DynamoDbTableCreator {
+import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
-    private static final String RESTAURANT_TABLE_NAME = "Restaurant";
+@CacheConfig(cacheNames = RESTAURANTS_CACHE_NAME)
+public class RestaurantRepository extends DynamoDbRepository<RestaurantItem, RestaurantKey> {
 
-    private final DynamoDbClient dynamoDbClient;
+    private static final String TABLE_NAME = "Restaurant";
 
-    DynamoDbTableCreator(DynamoDbClient dynamoDbClient) {
-        this.dynamoDbClient = dynamoDbClient;
+    public RestaurantRepository(DynamoDbClient client) {
+        super(TABLE_NAME, new RestaurantItemMapper(), client);
     }
 
-    @PostConstruct
-    void create() {
-        try {
-            dynamoDbClient.createTable(prepareCreateRestaurantTableRequest());
-        } catch (ResourceInUseException exception) {
-            log.info("Tried to create table {}, but it already exists", RESTAURANT_TABLE_NAME);
-        }
+    @Override
+    @Cacheable
+    public Optional<RestaurantItem> findByKey(RestaurantKey key) {
+        return super.findByKey(key);
     }
 
-    private static CreateTableRequest prepareCreateRestaurantTableRequest() {
+    @Override
+    @CacheEvict(key = "#item.getKey()")
+    public void create(RestaurantItem item) {
+        super.create(item);
+    }
+
+    @Override
+    @CacheEvict(key = "#item.getKey()")
+    public void update(RestaurantItem item, Map<String, AttributeValueUpdate> updates) {
+        super.update(item, updates);
+    }
+
+    @Override
+    @CacheEvict(key = "#item.getKey()")
+    public void update(RestaurantItem item, AttributesCreator attributesCreator) {
+        super.update(item, attributesCreator);
+    }
+
+    @Override
+    @CacheEvict(key = "#item.getKey()")
+    public void delete(RestaurantItem item) {
+        super.delete(item);
+    }
+
+    @Override
+    protected CreateTableRequest prepareCreateTableRequest() {
         var userIdAttribute = "userId";
         var nameLowercaseAttribute = "nameLowercase";
         return CreateTableRequest.builder()
-                                 .tableName(RESTAURANT_TABLE_NAME)
+                                 .tableName(TABLE_NAME)
                                  .keySchema(
                                          KeySchemaElement.builder()
                                                          .attributeName(userIdAttribute)

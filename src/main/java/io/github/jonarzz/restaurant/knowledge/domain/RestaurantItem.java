@@ -1,8 +1,7 @@
 package io.github.jonarzz.restaurant.knowledge.domain;
 
-import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantKey.*;
+import static io.github.jonarzz.restaurant.knowledge.technical.auth.SecurityContext.*;
 import static java.lang.Boolean.*;
-import static org.springframework.util.StringUtils.*;
 
 import lombok.*;
 
@@ -12,7 +11,7 @@ import io.github.jonarzz.restaurant.knowledge.model.*;
 import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 @Builder
-record RestaurantItem(
+public record RestaurantItem(
         String userId,
         String restaurantName,
         @Singular Set<Category> categories,
@@ -37,7 +36,7 @@ record RestaurantItem(
         }
     }
 
-    RestaurantItem {
+    public RestaurantItem {
         if (restaurantName == null || restaurantName.isBlank()) {
             throw new IllegalArgumentException("Restaurant name cannot be blank");
         }
@@ -46,9 +45,9 @@ record RestaurantItem(
         }
     }
 
-    static RestaurantItem from(RestaurantData restaurant) {
+    public static RestaurantItem from(RestaurantData restaurant) {
         return RestaurantItem.builder()
-                             .userId(contextUserId())
+                             .userId(getUserId())
                              .restaurantName(restaurant.getName())
                              .categories(restaurant.getCategories())
                              .triedBefore(TRUE.equals(restaurant.getTriedBefore()))
@@ -64,7 +63,7 @@ record RestaurantItem(
         return new RestaurantKey(userId, restaurantName);
     }
 
-    RestaurantData data() {
+    public RestaurantData data() {
         return new RestaurantData()
                 .name(restaurantName)
                 .categories(categories)
@@ -73,7 +72,7 @@ record RestaurantItem(
                                 // rating = 0 - empty value in DynamoDB
                                 .filter(value -> value > 0)
                                 .orElse(null))
-                .review(hasText(review) ? review : null)
+                .review(review != null && !review.isBlank() ? review : null)
                 .notes(notes);
     }
 

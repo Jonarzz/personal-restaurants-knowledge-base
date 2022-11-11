@@ -8,8 +8,9 @@ import org.springframework.beans.factory.annotation.*;
 import org.springframework.boot.autoconfigure.*;
 import org.springframework.boot.test.context.*;
 import org.springframework.context.annotation.*;
-import org.springframework.security.authentication.*;
-import org.springframework.security.core.context.*;
+
+import io.github.jonarzz.restaurant.knowledge.api.*;
+import io.github.jonarzz.restaurant.knowledge.technical.auth.*;
 
 @SpringBootTest(
         webEnvironment = MOCK,
@@ -36,9 +37,7 @@ class RestaurantEntryContractTestBase {
     @BeforeEach
     void setup() {
         RestAssuredMockMvc.standaloneSetup(restaurantController);
-
-        SecurityContextHolder.getContext()
-                             .setAuthentication(new TestingAuthenticationToken(TEST_USER, null));
+        SecurityContext.setUserId(TEST_USER);
     }
 
     @AfterAll
