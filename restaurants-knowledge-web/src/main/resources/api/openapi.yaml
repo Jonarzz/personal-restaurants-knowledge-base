@@ -1,0 +1,750 @@
+
+openapi: 3.0.0
+info:
+  title: Personal restaurants knowledge base
+  description: |
+    This API allows to store and view personal ratings and notes 
+    related to tried or ordered from restaurants 
+    and places you may want to visit/order from in the future.
+    
+    Note: all requests are performed in context of currently logged in user.
+  version: '1'
+
+paths:
+  /restaurants:
+    get:
+      summary: Query restaurants by criteria
+      operationId: queryRestaurantsByCriteria
+      tags: [ Restaurants ]
+      x-contracts:
+        - contractId: get-all-params
+          name: Query with all parameters
+        - contractId: get-no-params
+          name: Try to query with no parameters
+      parameters:
+        - name: nameBeginsWith
+          in: query
+          schema:
+            type: string
+          x-contracts:
+            - contractId: get-all-params
+              value: KF
+        - name: category
+          in: query
+          schema:
+            $ref: '#/components/schemas/Category'
+          x-contracts:
+            - contractId: get-all-params
+              value: FAST_FOOD
+        - name: triedBefore
+          in: query
+          schema:
+            type: boolean
+          x-contracts:
+            - contractId: get-all-params
+              value: true
+        - name: ratingAtLeast
+          in: query
+          schema:
+            $ref: '#/components/schemas/Rating'
+          x-contracts:
+            - contractId: get-all-params
+              value: 3
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RestaurantData'
+          x-contracts:
+            - contractId: get-all-params
+              body:
+                - name: KFC City Centre
+                  categories: [ 'FAST_FOOD', 'CHICKEN' ]
+                  triedBefore: true
+                  rating: 4
+                  review: 'Not my gig'
+                - name: KFC Some Street
+                  categories: [ 'FAST_FOOD', 'CHICKEN' ]
+                  triedBefore: true
+                  rating: 5
+        400:
+          description: When no param is provided
+          x-contracts:
+            - contractId: get-no-params
+    post:
+      summary: Create a restaurant entry
+      operationId: createRestaurant
+      tags: [ Restaurants ]
+      x-contracts:
+        - contractId: create-not-visited
+          name: Create a restaurant for future visit
+        - contractId: create-visited
+          name: Create visited restaurant
+        - contractId: try-to-create-existing
+          name: Try to create a restaurant with duplicated name
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestaurantData'
+        x-contracts:
+          - contractId: create-not-visited
+            body:
+              name: Trattoria Napoli
+              categories: [ 'PIZZA' ]
+          - contractId: create-visited
+            body:
+              name: KFC Westfield Arkadia
+              categories: [ 'FAST_FOOD', 'CHICKEN' ]
+              rating: 4
+              review: 'Not my gig'
+              notes:
+                - Try to avoid it
+          - contractId: try-to-create-existing
+            body:
+              name: KFC City Centre
+      responses:
+        201:
+          description: Restaurant created
+          headers:
+            Location:
+              schema:
+                type: string
+          x-contracts:
+            - contractId: create-not-visited
+              headers:
+                Location: /restaurants/Trattoria+Napoli
+            - contractId: create-visited
+              headers:
+                Location: /restaurants/KFC+Westfield+Arkadia
+        409:
+          description: Restaurant with given name already exists
+          x-contracts:
+            - contractId: try-to-create-existing
+  /restaurants/{restaurantName}:
+    parameters:
+      - $ref: '#/components/parameters/path.RestaurantName'
+    get:
+      summary: Get restaurant details
+      operationId: getRestaurantDetails
+      tags: [ Restaurant entry ]
+      x-contracts:
+        - contractId: get-by-name
+          name: Get restaurant details
+          contractPath: /restaurants/KFC City Centre
+        - contractId: try-to-get-non-existent
+          name: Try to get details of restaurant entry that does not exist
+          contractPath: /restaurants/Trattoria Napoli
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantData'
+          x-contracts:
+            - contractId: get-by-name
+              body:
+                name: KFC City Centre
+                categories: [ 'FAST_FOOD', 'CHICKEN' ]
+                rating: 4
+                review: 'Not my gig'
+                notes:
+                  - Try to avoid it
+        404:
+          description: Restaurant with given name not found
+          x-contracts:
+            - contractId: try-to-get-non-existent
+    put:
+      summary: Update the restaurant
+      operationId: updateRestaurant
+      tags: [ Restaurant entry ]
+      x-contracts:
+        - contractId: rename
+          name: Successfully rename restaurant
+          contractPath: /restaurants/KFC City Centre
+        - contractId: update-without-changes
+          name: Rename to the same name
+          contractPath: /restaurants/KFC City Centre
+        - contractId: try-to-rename-non-existent
+          name: Try to rename restaurant that does not exist
+          contractPath: /restaurants/Trattoria Napoli
+        - contractId: try-to-rename-to-existing
+          name: Try to rename restaurant to a name that matches another restaurant entry
+          contractPath: /restaurants/KFC City Centre
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestaurantData'
+        x-contracts:
+          - contractId: rename
+            body:
+              name: Trattoria Napoli
+              categories: [ 'PIZZA' ]
+          - contractId: update-without-changes
+            body:
+              name: KFC City Centre
+              categories: [ 'FAST_FOOD', 'CHICKEN' ]
+              triedBefore: true
+              rating: 4
+              review: 'Not my gig'
+              notes: [ 'Try to avoid it' ]
+          - contractId: try-to-rename-non-existent
+            body:
+              name: Does not matter
+              categories: [ 'OTHER' ]
+          - contractId: try-to-rename-to-existing
+            body:
+              name: KFC Some Street
+              categories: [ 'CHICKEN' ]
+      responses:
+        200:
+          description: Restaurant renamed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantData'
+          x-contracts:
+            - contractId: rename
+              body:
+                name: Trattoria Napoli
+                triedBefore: true
+                rating: 4
+                review: Not my gig
+                notes: ['Try to avoid it']
+            # TODO full update contract
+        204:
+          description: Restaurant not changed
+          x-contracts:
+            - contractId: update-without-changes
+        404:
+          description: Restaurant with given name not found
+          x-contracts:
+            - contractId: try-to-rename-non-existent
+        409:
+          description: Restaurant with target name already exists
+          x-contracts:
+            - contractId: try-to-rename-to-existing
+    delete:
+      summary: Delete the restaurant entry
+      operationId: deleteRestaurant
+      tags: [ Restaurant entry ]
+      x-contracts:
+        - contractId: delete
+          name: Successfully delete restaurant
+          contractPath: /restaurants/KFC City Centre
+        - contractId: try-to-delete-non-existent
+          name: Try to delete restaurant that does not exist
+          contractPath: /restaurants/Trattoria Napoli
+      responses:
+        204:
+          description: Restaurant entry deleted
+          x-contracts:
+            - contractId: delete
+        404:
+          description: Restaurant with given name not found
+          x-contracts:
+            - contractId: try-to-delete-non-existent
+  /restaurants/{restaurantName}/rating:
+    parameters:
+      - $ref: '#/components/parameters/path.RestaurantName'
+    put:
+      summary: Update rating of the restaurant
+      description: Additionally marks the restaurant as tried
+      operationId: updateRestaurantRating
+      tags: [ Restaurant entry ]
+      x-contracts:
+        - contractId: update-rating
+          name: Successfully change rating
+          contractPath: /restaurants/KFC City Centre/rating
+        - contractId: no-rating-value
+          name: No rating value
+          contractPath: /restaurants/KFC City Centre/rating
+        - contractId: rating-too-low
+          name: Rating less than 1
+          contractPath: /restaurants/KFC City Centre/rating
+        - contractId: rating-too-high
+          name: Rating greater than 10
+          contractPath: /restaurants/KFC City Centre/rating
+        - contractId: try-to-change-rating-for-non-existent
+          name: Try to change rating for a restaurant that does not exist
+          contractPath: /restaurants/Trattoria Napoli/rating
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rating:
+                  $ref: '#/components/schemas/Rating'
+              required:
+                - rating
+        x-contracts:
+          - contractId: update-rating
+            body:
+              rating: 7
+          - contractId: no-rating-value
+          - contractId: rating-too-low
+            body:
+              rating: 0
+          - contractId: rating-too-high
+            body:
+              rating: 11
+          - contractId: try-to-change-rating-for-non-existent
+            body:
+              rating: 9
+      responses:
+        204:
+          description: Rating updated
+          x-contracts:
+            - contractId: update-rating
+        400:
+          description: Bad rating value (should be an integer between 1 and 10)
+          x-contracts:
+            - contractId: no-rating-value
+            - contractId: rating-too-low
+            - contractId: rating-too-high
+        404:
+          description: Restaurant with given name not found
+          x-contracts:
+            - contractId: try-to-change-rating-for-non-existent
+  /restaurants/{restaurantName}/review:
+    parameters:
+      - $ref: '#/components/parameters/path.RestaurantName'
+    put:
+      summary: Update review of the restaurant
+      description: Additionally marks the restaurant as tried
+      operationId: updateRestaurantReview
+      tags: [ Restaurant entry ]
+      x-contracts:
+        - contractId: update-review
+          name: Successfully update the review
+          contractPath: /restaurants/KFC City Centre/review
+        - contractId: try-to-update-review-for-non-existent
+          name: Try to update review for restaurant that does not exist
+          contractPath: /restaurants/Trattoria Napoli/review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                review:
+                  type: string
+              required:
+                - review
+        x-contracts:
+          - contractId: update-review
+            body:
+              review: Some review of the restaurant
+          - contractId: try-to-update-review-for-non-existent
+            body:
+              review: Some review of a restaurant that does not exist
+      responses:
+        204:
+          description: Review updated
+          x-contracts:
+            - contractId: update-review
+        404:
+          description: Restaurant with given name not found
+          x-contracts:
+            - contractId: try-to-update-review-for-non-existent
+    delete:
+      summary: Delete review of the restaurant
+      operationId: deleteRestaurantReview
+      tags: [ Restaurant entry ]
+      x-contracts:
+        - contractId: delete-review
+          name: Successfully remove the review
+          contractPath: /restaurants/KFC City Centre/review
+        - contractId: try-to-delete-review-for-non-existent
+          name: Try to delete review for restaurant that does not exist
+          contractPath: /restaurants/Trattoria Napoli/review
+      responses:
+        204:
+          description: Review deleted
+          x-contracts:
+            - contractId: delete-review
+        404:
+          description: Restaurant with given name not found
+          x-contracts:
+            - contractId: try-to-delete-review-for-non-existent
+  /restaurants/{restaurantName}/tried:
+    parameters:
+      - $ref: '#/components/parameters/path.RestaurantName'
+    post:
+      summary: Mark restaurant as tried
+      operationId: markRestaurantAsTried
+      tags: [ Restaurant entry ]
+      x-contracts:
+        - contractId: mark-as-tried
+          name: Successfully mark the restaurant as tried
+          contractPath: /restaurants/KFC City Centre/tried
+        - contractId: try-to-mark-as-tried-for-non-existent
+          name: Try to mark restaurant that does not exist as tried
+          contractPath: /restaurants/Trattoria Napoli/tried
+      responses:
+        204:
+          description: Marked as tried
+          x-contracts:
+            - contractId: mark-as-tried
+        404:
+          description: Restaurant with given name not found
+          x-contracts:
+            - contractId: try-to-mark-as-tried-for-non-existent
+    delete:
+      summary: Mark restaurant as not tried
+      operationId: markRestaurantAsNotTried
+      description: Additionally removes the review and rating from the restaurant entry
+      tags: [ Restaurant entry ]
+      x-contracts:
+        - contractId: mark-as-not-tried
+          name: Successfully mark the restaurant as not tried
+          contractPath: /restaurants/KFC City Centre/tried
+        - contractId: try-to-mark-as-not-tried-for-non-existent
+          name: Try to mark restaurant that does not exist as not tried
+          contractPath: /restaurants/Trattoria Napoli/tried
+      responses:
+        204:
+          description: Marked as not tried
+          x-contracts:
+            - contractId: mark-as-not-tried
+        404:
+          description: Restaurant with given name not found
+          x-contracts:
+            - contractId: try-to-mark-as-not-tried-for-non-existent
+  /restaurants/{restaurantName}/categories:
+    parameters:
+      - $ref: '#/components/parameters/path.RestaurantName'
+    post:
+      summary: Add a category
+      operationId: addRestaurantCategory
+      tags: [ Restaurant entry ]
+      x-contracts:
+        - contractId: add-category
+          name: Successfully add a category
+          contractPath: /restaurants/KFC City Centre/categories
+        - contractId: add-already-exitent-category
+          name: Add a category that already exists
+          contractPath: /restaurants/KFC City Centre/categories
+        - contractId: try-to-add-category-for-non-existent
+          name: Try to add a category for restaurant that does not exist
+          contractPath: /restaurants/Trattoria Napoli/categories
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                category:
+                  $ref: '#/components/schemas/Category'
+              required:
+                - category
+        x-contracts:
+          - contractId: add-category
+            body:
+              category: SANDWICH
+          - contractId: add-already-exitent-category
+            body:
+              category: CHICKEN
+          - contractId: try-to-add-category-for-non-existent
+            body:
+              category: FAST_FOOD
+      responses:
+        200:
+          description: Category added
+          content:
+            application/json:
+              schema:
+                type: array
+                minItems: add-category
+                uniqueItems: true
+                items:
+                  $ref: '#/components/schemas/Category'
+          x-contracts:
+            - contractId: add-category
+              body: [ 'SANDWICH', 'CHICKEN', 'FAST_FOOD' ]
+            - contractId: add-already-exitent-category
+              body: [ 'CHICKEN', 'FAST_FOOD' ]
+        404:
+          description: Restaurant with given name not found
+          x-contracts:
+            - contractId: try-to-add-category-for-non-existent
+    put:
+      summary: Replace categories
+      operationId: replaceRestaurantCategories
+      tags: [ Restaurant entry ]
+      x-contracts:
+        - contractId: replace-categories
+          name: Successfully replace categories
+          contractPath: /restaurants/KFC City Centre/categories
+        - contractId: try-to-replace-categories-for-non-existent
+          name: Try to replace categories for restaurant that does not exist
+          contractPath: /restaurants/Trattoria Napoli/categories
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              items:
+                $ref: '#/components/schemas/Category'
+        x-contracts:
+          - contractId: replace-categories
+            body: [ FAST_FOOD, SANDWICH, CHICKEN, BURGER, OTHER ]
+          - contractId: try-to-replace-categories-for-non-existent
+            body: [ FAST_FOOD, BURGER, CHICKEN ]
+      responses:
+        204:
+          description: Categories replaced
+          x-contracts:
+            - contractId: replace-categories
+        404:
+          description: Restaurant with given name not found
+          x-contracts:
+            - contractId: try-to-replace-categories-for-non-existent
+  /restaurants/{restaurantName}/categories/{categoryName}:
+    parameters:
+      - $ref: '#/components/parameters/path.RestaurantName'
+      - name: categoryName
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/Category'
+    delete:
+      summary: Remove the category
+      operationId: removeRestaurantCategory
+      tags: [ Restaurant entry ]
+      x-contracts:
+        - contractId: delete-category
+          name: Successfully delete category
+          contractPath: /restaurants/KFC City Centre/categories/FAST_FOOD
+        - contractId: delete-non-existent-category
+          name: Delete category that does not exist
+          contractPath: /restaurants/KFC City Centre/categories/PIZZA
+        - contractId: try-to-delete-category-for-non-existent
+          name: Try to delete category for restaurant that does not exist
+          contractPath: /restaurants/Trattoria Napoli/categories/FAST_FOOD
+      responses:
+        204:
+          description: Category removed
+          x-contracts:
+            - contractId: delete-category
+            - contractId: delete-non-existent-category
+        404:
+          description: Restaurant with given name not found
+          x-contracts:
+            - contractId: try-to-delete-category-for-non-existent
+  /restaurants/{restaurantName}/notes:
+    parameters:
+      - $ref: '#/components/parameters/path.RestaurantName'
+    post:
+      summary: Add a note
+      operationId: addRestaurantNote
+      tags: [ Restaurant entry ]
+      x-contracts:
+        - contractId: add-note
+          name: Successfully add note
+          contractPath: /restaurants/KFC City Centre/notes
+        - contractId: try-to-add-note-for-non-existent
+          name: Try to add note for restaurant that does not exist
+          contractPath: /restaurants/Trattoria Napoli/notes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note:
+                  type: string
+              required:
+                - note
+        x-contracts:
+          - contractId: add-note
+            body:
+              note: Note text to add
+          - contractId: try-to-add-note-for-non-existent
+            body:
+              note: Irrelevant
+      responses:
+        200:
+          description: Note added
+          content:
+            application/json:
+              schema:
+                type: array
+                minItems: 1
+                items:
+                  type: string
+          x-contracts:
+            - contractId: add-note
+              body: [ 'Try to avoid it', 'Note text to add' ]
+        404:
+          description: Restaurant with given name not found
+          x-contracts:
+            - contractId: try-to-add-note-for-non-existent
+  /restaurants/{restaurantName}/notes/{noteIndex}:
+    parameters:
+      - $ref: '#/components/parameters/path.RestaurantName'
+      - name: noteIndex
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      summary: Replace the note
+      operationId: replaceRestaurantNote
+      tags: [ Restaurant entry ]
+      x-contracts:
+        - contractId: replace-note
+          name: Successfully replace note
+          contractPath: /restaurants/KFC City Centre/notes/0
+        - contractId: try-to-replace-note-negative-index
+          name: Try to replace note with negative index
+          contractPath: /restaurants/KFC City Centre/notes/-1
+        - contractId: try-to-replace-note-out-of-bounds
+          name: Try to replace note out of index bounds of existing notes
+          contractPath: /restaurants/KFC City Centre/notes/1
+        - contractId: try-to-replace-note-for-non-existent
+          name: Try to replace note for restaurant that does not exist
+          contractPath: /restaurants/Trattoria Napoli/notes/0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note:
+                  type: string
+              required:
+                - note
+        x-contracts:
+          - contractId: replace-note
+            body:
+              note: Replaced note text
+          - contractId: try-to-replace-note-negative-index
+            body:
+              note: Irrelevant
+          - contractId: try-to-replace-note-out-of-bounds
+            body:
+              note: Irrelevant
+          - contractId: try-to-replace-note-for-non-existent
+            body:
+              note: Irrelevant
+      responses:
+        200:
+          description: Note replaced
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+          x-contracts:
+            - contractId: replace-note
+              body: [ 'Replaced note text' ]
+        400:
+          description: Note index is less than 0 or greater than last note index
+          x-contracts:
+            - contractId: try-to-replace-note-negative-index
+            - contractId: try-to-replace-note-out-of-bounds
+        404:
+          description: Restaurant with given name not found
+          x-contracts:
+            - contractId: try-to-replace-note-for-non-existent
+    delete:
+      summary: Remove the note
+      operationId: removeRestaurantNote
+      tags: [ Restaurant entry ]
+      x-contracts:
+        - contractId: delete-note
+          name: Successfully delete note
+          contractPath: /restaurants/KFC City Centre/notes/0
+        - contractId: try-to-delete-note-out-of-bounds
+          name: Try to delete note out of index bounds of existing notes
+          contractPath: /restaurants/KFC City Centre/notes/1
+        - contractId: try-to-delete-note-negative-index
+          name: Try to delete note with negative index
+          contractPath: /restaurants/KFC City Centre/notes/-1
+        - contractId: try-to-delete-note-for-non-existent
+          name: Try to delete note for restaurant that does not exist
+          contractPath: /restaurants/Trattoria Napoli/notes/0
+      responses:
+        204:
+          description: Note removed
+          x-contracts:
+            - contractId: delete-note
+            - contractId: try-to-delete-note-out-of-bounds
+        400:
+          description: Note index is less than 0 or greater than last note index
+          x-contracts:
+            - contractId: try-to-delete-note-negative-index
+        404:
+          description: Restaurant with given name not found
+          x-contracts:
+            - contractId: try-to-delete-note-for-non-existent
+
+components:
+  schemas:
+    RestaurantData:
+      type: object
+      properties:
+        name:
+          type: string
+        categories:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Category'
+        triedBefore:
+          type: boolean
+        rating:
+          $ref: '#/components/schemas/Rating'
+        review:
+          type: string
+        notes:
+          type: array
+          items:
+            type: string
+    Category:
+      type: string
+      enum:
+        - ASIAN
+        - BEER
+        - BURGER
+        - CHICKEN
+        - FAST_FOOD
+        - INDIAN
+        - KEBAB
+        - LUNCH
+        - OTHER
+        - PASTA
+        - PIZZA
+        - RAMEN
+        - SANDWICH
+        - SUSHI
+        - VEGAN
+    Rating:
+      type: integer
+      minimum: 1
+      maximum: 10
+  parameters:
+    path.RestaurantName:
+      name: restaurantName
+      in: path
+      required: true
+      schema:
+        type: string

@@ -54,20 +54,21 @@ export interface AddRestaurantNoteRequest {
  */
 
 export const Category = {
-    Pizza: 'PIZZA',
-    Burger: 'BURGER',
-    Sandwich: 'SANDWICH',
-    FastFood: 'FAST_FOOD',
-    Pasta: 'PASTA',
-    Lunch: 'LUNCH',
-    Kebab: 'KEBAB',
-    Chicken: 'CHICKEN',
-    Vegan: 'VEGAN',
-    Ramen: 'RAMEN',
-    Sushi: 'SUSHI',
     Asian: 'ASIAN',
+    Beer: 'BEER',
+    Burger: 'BURGER',
+    Chicken: 'CHICKEN',
+    FastFood: 'FAST_FOOD',
     Indian: 'INDIAN',
-    Other: 'OTHER'
+    Kebab: 'KEBAB',
+    Lunch: 'LUNCH',
+    Other: 'OTHER',
+    Pasta: 'PASTA',
+    Pizza: 'PIZZA',
+    Ramen: 'RAMEN',
+    Sandwich: 'SANDWICH',
+    Sushi: 'SUSHI',
+    Vegan: 'VEGAN'
 } as const;
 
 export type Category = typeof Category[keyof typeof Category];

@@ -10,6 +10,7 @@ jobs:
   run-e2e-tests:
 
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - uses: actions/checkout@v3
@@ -23,13 +24,15 @@ jobs:
         run: |
           cd frontend-app
           (npm install; npm start) &
-          while ! nc -z localhost 3000; do sleep 1; done # frontend
+          while ! nc -z localhost 3000; do sleep 1; done
       - name: Run backend
         run: |
+          mvn install -DskipTests
+          cd restaurants-knowledge-web
           mvn groovy:execute &
           until [ -f .dynamodb-port ]; do sleep 1; done
           mvn spring-boot:run -Dspring-boot.run.arguments="--amazon.aws.dynamodb-url=http://localhost:$(cat .dynamodb-port)" &
-          while ! nc -z localhost 8080; do sleep 1; done # backend
+          while ! nc -z localhost 8080; do sleep 1; done
       - name: Execute E2E tests
         run: |
           cd frontend-app

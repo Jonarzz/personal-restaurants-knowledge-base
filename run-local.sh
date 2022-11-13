@@ -1,3 +1,4 @@
+cd restaurants-knowledge-web || exit 1
 dynamodbPortFile=.dynamodb-port
 rm $dynamodbPortFile
 mvn groovy:execute &
