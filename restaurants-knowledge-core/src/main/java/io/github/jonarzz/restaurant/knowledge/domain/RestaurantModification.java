@@ -130,23 +130,21 @@ class RestaurantModification {
                           .putOrEmpty(NOTES, notes);
         }
 
-        RestaurantItem applied() {
-            return RestaurantItem.builder()
-                                 .userId(base.userId())
-                                 .restaurantName(ofNullable(restaurantName)
-                                                         .orElseGet(base::restaurantName))
-                                 .categories(ofNullable(categories)
-                                                     .orElseGet(base::categories))
-                                 .triedBefore(ofNullable(triedBefore)
-                                                      .orElseGet(base::triedBefore))
-                                 .rating(ofNullable(rating)
-                                                 .map(Integer::valueOf)
-                                                 .orElseGet(base::rating))
-                                 .review(ofNullable(review)
-                                                 .orElseGet(base::review))
-                                 .notes(ofNullable(notes)
-                                                .orElseGet(base::notes))
-                                 .build();
+        RestaurantData applied() {
+            return new RestaurantData()
+                    .name(ofNullable(restaurantName)
+                                  .orElseGet(base::restaurantName))
+                    .categories(ofNullable(categories)
+                                        .orElseGet(base::categories))
+                    .triedBefore(ofNullable(triedBefore)
+                                         .orElseGet(base::triedBefore))
+                    .rating(ofNullable(rating)
+                                    .map(Integer::valueOf)
+                                    .orElseGet(base::rating))
+                    .review(ofNullable(review)
+                                    .orElseGet(base::review))
+                    .notes(ofNullable(notes)
+                                   .orElseGet(base::notes));
         }
     }
 }

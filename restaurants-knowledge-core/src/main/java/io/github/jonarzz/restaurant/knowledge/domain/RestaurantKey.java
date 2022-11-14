@@ -21,12 +21,12 @@ class RestaurantKey implements DynamoDbKey {
     private final String userId;
     private final String nameLowercase;
 
-    RestaurantKey(String userId, String nameLowercase) {
+    RestaurantKey(String userId, String name) {
         if (userId == null) {
             userId = SecurityContext.getUserId();
         }
         this.userId = userId;
-        this.nameLowercase = nameLowercase.toLowerCase();
+        nameLowercase = name.toLowerCase();
     }
 
     RestaurantKey(String restaurantName) {

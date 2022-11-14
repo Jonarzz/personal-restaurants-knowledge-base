@@ -2,27 +2,29 @@ package io.github.jonarzz.restaurant.knowledge.domain;
 
 import java.util.*;
 
+import io.github.jonarzz.restaurant.knowledge.common.*;
+
 public interface RestaurantService {
 
     String CACHE_NAME = "RestaurantCache";
 
-    Optional<RestaurantItem> fetch(String restaurantName);
+    Optional<RestaurantData> fetch(String restaurantName);
 
-    List<RestaurantItem> query(RestaurantQueryCriteria criteria);
+    List<RestaurantData> query(RestaurantQueryCriteria criteria);
 
-    void create(RestaurantItem item);
+    ModificationResultType create(RestaurantData restaurantData);
 
-    Optional<RestaurantItem> update(RestaurantItem restaurant, RestaurantData updateData);
+    ModificationResult<RestaurantData> update(String restaurantName, RestaurantData updateData);
 
-    void delete(RestaurantItem restaurantItem);
+    ModificationResultType delete(String restaurantName);
 
-    void setRating(RestaurantItem restaurant, int rating);
+    ModificationResultType setRating(String restaurantName, int rating);
 
-    void setReview(RestaurantItem restaurant, String review);
+    ModificationResultType setReview(String restaurantName, String review);
 
-    void setTriedBefore(RestaurantItem restaurant, boolean tried);
+    ModificationResultType setTriedBefore(String restaurantName, boolean tried);
 
-    void replaceCategories(RestaurantItem restaurant, Set<Category> categories);
+    ModificationResultType replaceCategories(String restaurantName, Set<Category> categories);
 
-    void replaceNotes(RestaurantItem restaurant, List<String> notes);
+    ModificationResultType replaceNotes(String restaurantName, List<String> notes);
 }

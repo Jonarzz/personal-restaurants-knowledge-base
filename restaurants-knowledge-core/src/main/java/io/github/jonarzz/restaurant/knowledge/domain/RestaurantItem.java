@@ -14,9 +14,7 @@ import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 @Getter
 @Accessors(fluent = true)
 @ToString
-public class RestaurantItem implements DynamoDbTable<RestaurantKey> {
-
-    // TODO refactor not to be public
+class RestaurantItem implements DynamoDbTable<RestaurantKey> {
 
     private final String userId;
     private final String restaurantName;
@@ -43,7 +41,7 @@ public class RestaurantItem implements DynamoDbTable<RestaurantKey> {
         }
     }
 
-    public static RestaurantItem from(RestaurantData restaurant) {
+    static RestaurantItem from(RestaurantData restaurant) {
         return RestaurantItem.builder()
                              .userId(getUserId())
                              .restaurantName(restaurant.name())
@@ -56,7 +54,7 @@ public class RestaurantItem implements DynamoDbTable<RestaurantKey> {
                              .build();
     }
 
-    public RestaurantData data() {
+    RestaurantData data() {
         return new RestaurantData()
                 .name(restaurantName)
                 .categories(categories)
@@ -72,18 +70,6 @@ public class RestaurantItem implements DynamoDbTable<RestaurantKey> {
     @Override
     public RestaurantKey getKey() {
         return new RestaurantKey(userId, restaurantName);
-    }
-
-    RestaurantItem markedAsTriedBefore() {
-        return RestaurantItem.builder()
-                             .triedBefore(true)
-                             .restaurantName(restaurantName)
-                             .userId(userId)
-                             .categories(categories)
-                             .rating(rating)
-                             .review(review)
-                             .notes(notes)
-                             .build();
     }
 
     String ratingString() {

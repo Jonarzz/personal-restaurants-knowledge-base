@@ -15,6 +15,7 @@ import java.util.*;
 import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 @AllArgsConstructor
+@EqualsAndHashCode
 class RestaurantDynamoDbCriteria implements DynamoDbQueryCriteria {
 
     private RestaurantQueryCriteria criteria;

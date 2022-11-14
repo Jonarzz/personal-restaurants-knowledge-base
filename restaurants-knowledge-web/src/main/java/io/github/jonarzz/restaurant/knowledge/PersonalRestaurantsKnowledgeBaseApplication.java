@@ -10,7 +10,7 @@ import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 @Configuration
 @EnableAutoConfiguration
 @Import({
-        DynamoDbClientFactory.class, RestaurantDomainConfig.class,
+        DynamoDbClientFactory.class, ApiConfig.class,
         CacheConfig.class, SecurityConfig.class
 })
 @Slf4j

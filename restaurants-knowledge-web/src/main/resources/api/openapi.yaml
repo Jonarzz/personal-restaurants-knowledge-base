@@ -247,9 +247,6 @@ paths:
           description: Restaurant entry deleted
           x-contracts:
             - contractId: delete
-        404:
-          description: Restaurant with given name not found
-          x-contracts:
             - contractId: try-to-delete-non-existent
   /restaurants/{restaurantName}/rating:
     parameters:

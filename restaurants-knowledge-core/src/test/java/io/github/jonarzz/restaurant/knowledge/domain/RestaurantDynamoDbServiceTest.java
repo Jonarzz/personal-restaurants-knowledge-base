@@ -80,12 +80,9 @@ class RestaurantDynamoDbServiceTest {
     @Test
     @Order(20)
     void createFirstRestaurantEntry() {
-        var toSave = RestaurantItem.builder()
-                                   .userId(TEST_USER)
-                                   .restaurantName(NOT_TRIED_RESTAURANT_NAME)
-                                   .category(FAST_FOOD)
-                                   .category(BURGER)
-                                   .build();
+        var toSave = new RestaurantData()
+                .name(NOT_TRIED_RESTAURANT_NAME)
+                .categories(Set.of(FAST_FOOD, BURGER));
 
         assertThatNoException()
                 .isThrownBy(() -> restaurantService.create(toSave));
@@ -94,18 +91,15 @@ class RestaurantDynamoDbServiceTest {
     @Test
     @Order(20)
     void createSecondRestaurantEntry() {
-        var toSave = RestaurantItem.builder()
-                                   .userId(TEST_USER)
-                                   .restaurantName(TRIED_RESTAURANT_NAME)
-                                   .category(FAST_FOOD)
-                                   .category(SANDWICH)
-                                   // item with rating and/or review will be marked as tried before automatically
-                                   .triedBefore(false)
-                                   .rating(6)
-                                   .review("Good enough")
-                                   .note("Tuna should be ordered cold")
-                                   .note("Don't go too heavy on the veggies")
-                                   .build();
+        var toSave = new RestaurantData()
+                .name(TRIED_RESTAURANT_NAME)
+                .categories(Set.of(FAST_FOOD, SANDWICH))
+                // item with rating and/or review will be marked as tried before automatically
+                .triedBefore(false)
+                .rating(6)
+                .review("Good enough")
+                .notes(List.of("Tuna should be ordered cold",
+                               "Don't go too heavy on the veggies"));
 
         assertThatNoException()
                 .isThrownBy(() -> restaurantService.create(toSave));
@@ -115,11 +109,9 @@ class RestaurantDynamoDbServiceTest {
     @MethodSource("intRange")
     @Order(20)
     void createManyRestaurantEntries(int number) {
-        var toSave = RestaurantItem.builder()
-                                   .userId(TEST_USER)
-                                   .restaurantName("one-of-many-" + number)
-                                   .category(OTHER)
-                                   .build();
+        var toSave = new RestaurantData()
+                .name("one-of-many-" + number)
+                .categories(Set.of(OTHER));
 
         assertThatNoException()
                 .isThrownBy(() -> restaurantService.create(toSave));
@@ -221,6 +213,34 @@ class RestaurantDynamoDbServiceTest {
         assertThat(result)
                 .hasSize(1 + FILLER_ENTRIES_COUNT)
                 .anySatisfy(restaurant -> assertNotTriedRestaurantInitial(assertThat(restaurant)));
+    }
+
+    @Test
+    @Order(30)
+    void queryByTriedBefore_triedRestaurant_otherUser() {
+        var criteria = RestaurantQueryCriteria.builder()
+                                              .triedBefore(true)
+                                              .build();
+        setUpSecurityContext("some other user");
+
+        var result = restaurantService.query(criteria);
+
+        assertThat(result)
+                .isEmpty();
+    }
+
+    @Test
+    @Order(30)
+    void queryByTriedBefore_notTriedRestaurant_otherUser() {
+        var criteria = RestaurantQueryCriteria.builder()
+                                              .triedBefore(false)
+                                              .build();
+        setUpSecurityContext("some other user");
+
+        var result = restaurantService.query(criteria);
+
+        assertThat(result)
+                .isEmpty();
     }
 
     @Test
@@ -370,14 +390,11 @@ class RestaurantDynamoDbServiceTest {
     @Order(40)
     void deleteRestaurant() {
         var restaurantName = "for removal";
-        var toSave = RestaurantItem.builder()
-                                   .userId(TEST_USER)
-                                   .restaurantName(restaurantName)
-                                   .category(PIZZA)
-                                   .build();
+        var toSave = new RestaurantData().name(restaurantName)
+                                         .categories(Set.of(PIZZA));
         restaurantService.create(toSave);
 
-        actOn(restaurantName, restaurantService::delete);
+        actOnName(restaurantName, restaurantService::delete);
 
         assertThat(restaurantService.fetch(restaurantName))
                 .isEmpty();
@@ -391,23 +408,22 @@ class RestaurantDynamoDbServiceTest {
         var updateData = new RestaurantData()
                 .name(newName);
 
-        actOn(oldName,
-              restaurant -> restaurantService.update(restaurant, updateData));
+        actOnName(oldName,
+                  name -> restaurantService.update(name, updateData));
 
         assertThat(restaurantService.fetch(oldName))
                 .as("Restaurant fetched by old name")
                 .isEmpty();
         assertRestaurantFound(newName)
-                .returns(TEST_USER, RestaurantItem::userId)
-                .returns(newName, RestaurantItem::restaurantName)
-                .returns(Set.of(FAST_FOOD, SANDWICH), RestaurantItem::categories)
-                .returns(true, RestaurantItem::triedBefore)
-                .returns(6, RestaurantItem::rating)
-                .returns("Good enough", RestaurantItem::review)
+                .returns(newName, RestaurantData::name)
+                .returns(Set.of(FAST_FOOD, SANDWICH), RestaurantData::categories)
+                .returns(true, RestaurantData::triedBefore)
+                .returns(6, RestaurantData::rating)
+                .returns("Good enough", RestaurantData::review)
                 .returns(List.of(
                         "Tuna should be ordered cold",
                         "Don't go too heavy on the veggies"
-                ), RestaurantItem::notes);
+                ), RestaurantData::notes);
     }
 
     @Test
@@ -416,11 +432,11 @@ class RestaurantDynamoDbServiceTest {
         var newCategories = Set.of(VEGAN, FAST_FOOD, SANDWICH, CHICKEN);
         var restaurantName = TRIED_RESTAURANT_RENAMED;
 
-        actOn(restaurantName,
-              restaurant -> restaurantService.replaceCategories(restaurant, newCategories));
+        actOnName(restaurantName,
+                  name -> restaurantService.replaceCategories(name, newCategories));
 
         assertRestaurantFound(restaurantName)
-                .returns(newCategories, RestaurantItem::categories);
+                .returns(newCategories, RestaurantData::categories);
     }
 
     @Test
@@ -429,11 +445,11 @@ class RestaurantDynamoDbServiceTest {
         var newNotes = List.of("No hot tuna!", "4-5 veggies is enough");
         var restaurantName = TRIED_RESTAURANT_RENAMED;
 
-        actOn(restaurantName,
-              restaurant -> restaurantService.replaceNotes(restaurant, newNotes));
+        actOnName(restaurantName,
+                  name -> restaurantService.replaceNotes(name, newNotes));
 
         assertRestaurantFound(restaurantName)
-                .returns(newNotes, RestaurantItem::notes);
+                .returns(newNotes, RestaurantData::notes);
     }
 
     @Test
@@ -442,12 +458,12 @@ class RestaurantDynamoDbServiceTest {
         var newRating = 7;
         var restaurantName = NOT_TRIED_RESTAURANT_NAME;
 
-        actOn(restaurantName,
-              restaurant -> restaurantService.setRating(restaurant, newRating));
+        actOnName(restaurantName,
+                  name -> restaurantService.setRating(name, newRating));
 
         assertRestaurantFound(restaurantName)
-                .returns(newRating, RestaurantItem::rating)
-                .returns(true, RestaurantItem::triedBefore);
+                .returns(newRating, RestaurantData::rating)
+                .returns(true, RestaurantData::triedBefore);
     }
 
     @Test
@@ -455,12 +471,12 @@ class RestaurantDynamoDbServiceTest {
     void setNotVisited_afterSettingRating() {
         var restaurantName = NOT_TRIED_RESTAURANT_NAME;
 
-        actOn(restaurantName,
-              restaurant -> restaurantService.setTriedBefore(restaurant, false));
+        actOnName(restaurantName,
+                  name -> restaurantService.setTriedBefore(name, false));
 
         assertRestaurantFound(restaurantName)
-                .returns(false, RestaurantItem::triedBefore)
-                .returns(0, RestaurantItem::rating);
+                .returns(false, RestaurantData::triedBefore)
+                .returns(null, RestaurantData::rating);
     }
 
     @Test
@@ -469,12 +485,12 @@ class RestaurantDynamoDbServiceTest {
         var newReview = "It's all right";
         var restaurantName = NOT_TRIED_RESTAURANT_NAME;
 
-        actOn(restaurantName,
-              restaurant -> restaurantService.setReview(restaurant, newReview));
+        actOnName(restaurantName,
+                  name -> restaurantService.setReview(name, newReview));
 
         assertRestaurantFound(restaurantName)
-                .returns(newReview, RestaurantItem::review)
-                .returns(true, RestaurantItem::triedBefore);
+                .returns(newReview, RestaurantData::review)
+                .returns(true, RestaurantData::triedBefore);
     }
 
     @Test
@@ -482,12 +498,12 @@ class RestaurantDynamoDbServiceTest {
     void setNotVisited_afterSettingReview() {
         var restaurantName = NOT_TRIED_RESTAURANT_NAME;
 
-        actOn(restaurantName,
-              restaurant -> restaurantService.setTriedBefore(restaurant, false));
+        actOnName(restaurantName,
+                  name -> restaurantService.setTriedBefore(name, false));
 
         assertRestaurantFound(restaurantName)
-                .returns(false, RestaurantItem::triedBefore)
-                .returns("", RestaurantItem::review);
+                .returns(false, RestaurantData::triedBefore)
+                .returns(null, RestaurantData::review);
     }
 
     @Test
@@ -495,13 +511,13 @@ class RestaurantDynamoDbServiceTest {
     void setVisited() {
         var restaurantName = NOT_TRIED_RESTAURANT_NAME;
 
-        actOn(restaurantName,
-              restaurant -> restaurantService.setTriedBefore(restaurant, true));
+        actOnName(restaurantName,
+                  name -> restaurantService.setTriedBefore(name, true));
 
         assertRestaurantFound(restaurantName)
-                .returns(true, RestaurantItem::triedBefore)
-                .returns(0, RestaurantItem::rating)
-                .returns("", RestaurantItem::review);
+                .returns(true, RestaurantData::triedBefore)
+                .returns(null, RestaurantData::rating)
+                .returns(null, RestaurantData::review);
     }
 
     @Test
@@ -514,16 +530,15 @@ class RestaurantDynamoDbServiceTest {
                 .review(null)
                 .notes(null);
 
-        actOn(NOT_TRIED_RESTAURANT_NAME,
-              restaurant -> restaurantService.update(restaurant, updateData));
+        actOnName(NOT_TRIED_RESTAURANT_NAME,
+                  name -> restaurantService.update(name, updateData));
 
         assertRestaurantFound(NOT_TRIED_RESTAURANT_NAME)
-                .returns(TEST_USER, RestaurantItem::userId)
-                .returns(categories, RestaurantItem::categories)
-                .returns(true, RestaurantItem::triedBefore)
-                .returns(0, RestaurantItem::rating)
-                .returns("", RestaurantItem::review)
-                .returns(List.of(), RestaurantItem::notes);
+                .returns(categories, RestaurantData::categories)
+                .returns(true, RestaurantData::triedBefore)
+                .returns(null, RestaurantData::rating)
+                .returns(null, RestaurantData::review)
+                .returns(List.of(), RestaurantData::notes);
     }
 
     @Test
@@ -539,16 +554,15 @@ class RestaurantDynamoDbServiceTest {
                 .review(review)
                 .notes(notes);
 
-        actOn(NOT_TRIED_RESTAURANT_NAME,
-              restaurant -> restaurantService.update(restaurant, updateData));
+        actOnName(NOT_TRIED_RESTAURANT_NAME,
+                  name -> restaurantService.update(name, updateData));
 
         assertRestaurantFound(NOT_TRIED_RESTAURANT_NAME)
-                .returns(TEST_USER, RestaurantItem::userId)
-                .returns(categories, RestaurantItem::categories)
-                .returns(true, RestaurantItem::triedBefore)
-                .returns(rating, RestaurantItem::rating)
-                .returns(review, RestaurantItem::review)
-                .returns(notes, RestaurantItem::notes);
+                .returns(categories, RestaurantData::categories)
+                .returns(true, RestaurantData::triedBefore)
+                .returns(rating, RestaurantData::rating)
+                .returns(review, RestaurantData::review)
+                .returns(notes, RestaurantData::notes);
     }
 
     @Test
@@ -557,17 +571,16 @@ class RestaurantDynamoDbServiceTest {
         var updateData = new RestaurantData()
                 .triedBefore(false);
 
-        actOn(NOT_TRIED_RESTAURANT_NAME,
-              restaurant -> restaurantService.update(restaurant, updateData));
+        actOnName(NOT_TRIED_RESTAURANT_NAME,
+                  name -> restaurantService.update(name, updateData));
 
         assertRestaurantFound(NOT_TRIED_RESTAURANT_NAME)
-                .returns(TEST_USER, RestaurantItem::userId)
-                .returns(Set.of(PIZZA, PASTA, OTHER), RestaurantItem::categories)
-                .returns(false, RestaurantItem::triedBefore)
-                .returns(0, RestaurantItem::rating)
-                .returns("", RestaurantItem::review)
+                .returns(Set.of(PIZZA, PASTA, OTHER), RestaurantData::categories)
+                .returns(false, RestaurantData::triedBefore)
+                .returns(null, RestaurantData::rating)
+                .returns(null, RestaurantData::review)
                 // no notes on request => cleared
-                .returns(List.of(), RestaurantItem::notes);
+                .returns(List.of(), RestaurantData::notes);
     }
 
     @Test
@@ -580,14 +593,13 @@ class RestaurantDynamoDbServiceTest {
                 .rating(rating)
                 .review(review);
 
-        actOn(NOT_TRIED_RESTAURANT_NAME,
-              restaurant -> restaurantService.update(restaurant, updateData));
+        actOnName(NOT_TRIED_RESTAURANT_NAME,
+                  name -> restaurantService.update(name, updateData));
 
         assertRestaurantFound(NOT_TRIED_RESTAURANT_NAME)
-                .returns(TEST_USER, RestaurantItem::userId)
-                .returns(true, RestaurantItem::triedBefore)
-                .returns(rating, RestaurantItem::rating)
-                .returns(review, RestaurantItem::review);
+                .returns(true, RestaurantData::triedBefore)
+                .returns(rating, RestaurantData::rating)
+                .returns(review, RestaurantData::review);
     }
 
     @Test
@@ -599,50 +611,51 @@ class RestaurantDynamoDbServiceTest {
                 .rating(rating)
                 .review(review);
 
-        actOn(NOT_TRIED_RESTAURANT_NAME,
-              restaurant -> restaurantService.update(restaurant, updateData));
+        actOnName(NOT_TRIED_RESTAURANT_NAME,
+                  name -> restaurantService.update(name, updateData));
 
         assertRestaurantFound(NOT_TRIED_RESTAURANT_NAME)
-                .returns(TEST_USER, RestaurantItem::userId)
-                .returns(true, RestaurantItem::triedBefore)
-                .returns(rating, RestaurantItem::rating)
-                .returns(review, RestaurantItem::review);
+                .returns(true, RestaurantData::triedBefore)
+                .returns(rating, RestaurantData::rating)
+                .returns(review, RestaurantData::review);
     }
 
-    private void actOn(String restaurantName, Consumer<RestaurantItem> action) {
+    private void actOn(String restaurantName, Consumer<RestaurantData> action) {
         var restaurant = restaurantService.fetch(restaurantName)
                                           .orElseThrow(() -> new IllegalStateException("Not found restaurant with name "
                                                                                        + restaurantName));
         action.accept(restaurant);
     }
 
-    private ObjectAssert<RestaurantItem> assertRestaurantFound(String restaurantName) {
+    private void actOnName(String restaurantName, Consumer<String> action) {
+        actOn(restaurantName, restaurant -> action.accept(restaurant.name()));
+    }
+
+    private ObjectAssert<RestaurantData> assertRestaurantFound(String restaurantName) {
         return assertThat(restaurantService.fetch(restaurantName))
                 .as("Restaurant with name: " + restaurantName)
-                .get(type(RestaurantItem.class));
+                .get(type(RestaurantData.class));
     }
 
-    private static void assertNotTriedRestaurantInitial(ObjectAssert<RestaurantItem> restaurant) {
-        restaurant.returns(TEST_USER, RestaurantItem::userId)
-                  .returns(NOT_TRIED_RESTAURANT_NAME, RestaurantItem::restaurantName)
-                  .returns(Set.of(FAST_FOOD, BURGER), RestaurantItem::categories)
-                  .returns(false, RestaurantItem::triedBefore)
-                  .returns(null, RestaurantItem::rating)
-                  .returns(null, RestaurantItem::review)
-                  .returns(List.of(), RestaurantItem::notes);
+    private static void assertNotTriedRestaurantInitial(ObjectAssert<RestaurantData> restaurant) {
+        restaurant.returns(NOT_TRIED_RESTAURANT_NAME, RestaurantData::name)
+                  .returns(Set.of(FAST_FOOD, BURGER), RestaurantData::categories)
+                  .returns(false, RestaurantData::triedBefore)
+                  .returns(null, RestaurantData::rating)
+                  .returns(null, RestaurantData::review)
+                  .returns(List.of(), RestaurantData::notes);
     }
 
-    private static void assertTriedRestaurantInitial(ObjectAssert<RestaurantItem> restaurant) {
-        restaurant.returns(TEST_USER, RestaurantItem::userId)
-                  .returns(TRIED_RESTAURANT_NAME, RestaurantItem::restaurantName)
-                  .returns(Set.of(FAST_FOOD, SANDWICH), RestaurantItem::categories)
-                  .returns(true, RestaurantItem::triedBefore)
-                  .returns(6, RestaurantItem::rating)
-                  .returns("Good enough", RestaurantItem::review)
+    private static void assertTriedRestaurantInitial(ObjectAssert<RestaurantData> restaurant) {
+        restaurant.returns(TRIED_RESTAURANT_NAME, RestaurantData::name)
+                  .returns(Set.of(FAST_FOOD, SANDWICH), RestaurantData::categories)
+                  .returns(true, RestaurantData::triedBefore)
+                  .returns(6, RestaurantData::rating)
+                  .returns("Good enough", RestaurantData::review)
                   .returns(List.of(
                           "Tuna should be ordered cold",
                           "Don't go too heavy on the veggies"
-                  ), RestaurantItem::notes);
+                  ), RestaurantData::notes);
     }
 
     private static void setUpSecurityContext(String user) {

@@ -29,7 +29,7 @@ import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 @SpringBootTest(
         webEnvironment = NONE,
         classes = {
-                DynamoDbClientFactory.class, RestaurantDomainConfig.class, CacheConfig.class
+                DynamoDbClientFactory.class, ApiConfig.class, CacheConfig.class
         }
 )
 @TestPropertySource(properties = {
@@ -80,12 +80,9 @@ class RestaurantDynamoDbCacheTest {
     @Test
     @Order(10)
     void createFirstRestaurantEntry() {
-        var toSave = RestaurantItem.builder()
-                                   .userId(TEST_USER)
-                                   .restaurantName(NOT_TRIED_RESTAURANT_NAME)
-                                   .category(FAST_FOOD)
-                                   .category(BURGER)
-                                   .build();
+        var toSave = new RestaurantData()
+                .name(NOT_TRIED_RESTAURANT_NAME)
+                .categories(Set.of(FAST_FOOD, BURGER));
 
         assertThatNoException()
                 .isThrownBy(() -> restaurantService.create(toSave));
@@ -94,14 +91,11 @@ class RestaurantDynamoDbCacheTest {
     @Test
     @Order(10)
     void createSecondRestaurantEntry() {
-        var toSave = RestaurantItem.builder()
-                                   .userId(TEST_USER)
-                                   .restaurantName(TRIED_RESTAURANT_NAME)
-                                   .category(FAST_FOOD)
-                                   .category(SANDWICH)
-                                   .triedBefore(true)
-                                   .rating(6)
-                                   .build();
+        var toSave = new RestaurantData()
+                .name(TRIED_RESTAURANT_NAME)
+                .categories(Set.of(FAST_FOOD, SANDWICH))
+                .triedBefore(true)
+                .rating(6);
 
         assertThatNoException()
                 .isThrownBy(() -> restaurantService.create(toSave));
@@ -153,28 +147,26 @@ class RestaurantDynamoDbCacheTest {
         verifyNoInteractions(repositorySpy);
     }
 
-    private ObjectAssert<RestaurantItem> assertRestaurantFound(String restaurantName) {
+    private ObjectAssert<RestaurantData> assertRestaurantFound(String restaurantName) {
         return assertThat(restaurantService.fetch(restaurantName))
                 .as("Restaurant with name: " + restaurantName)
-                .get(type(RestaurantItem.class));
+                .get(type(RestaurantData.class));
     }
 
-    private static void assertNotTriedRestaurantInitial(ObjectAssert<RestaurantItem> restaurant) {
-        restaurant.returns(TEST_USER, RestaurantItem::userId)
-                  .returns(NOT_TRIED_RESTAURANT_NAME, RestaurantItem::restaurantName)
-                  .returns(Set.of(FAST_FOOD, BURGER), RestaurantItem::categories)
-                  .returns(false, RestaurantItem::triedBefore)
-                  .returns(null, RestaurantItem::rating)
-                  .returns(null, RestaurantItem::review)
-                  .returns(List.of(), RestaurantItem::notes);
+    private static void assertNotTriedRestaurantInitial(ObjectAssert<RestaurantData> restaurant) {
+        restaurant.returns(NOT_TRIED_RESTAURANT_NAME, RestaurantData::name)
+                  .returns(Set.of(FAST_FOOD, BURGER), RestaurantData::categories)
+                  .returns(false, RestaurantData::triedBefore)
+                  .returns(null, RestaurantData::rating)
+                  .returns(null, RestaurantData::review)
+                  .returns(List.of(), RestaurantData::notes);
     }
 
-    private static void assertTriedRestaurantInitial(ObjectAssert<RestaurantItem> restaurant) {
-        restaurant.returns(TEST_USER, RestaurantItem::userId)
-                  .returns(TRIED_RESTAURANT_NAME, RestaurantItem::restaurantName)
-                  .returns(Set.of(FAST_FOOD, SANDWICH), RestaurantItem::categories)
-                  .returns(true, RestaurantItem::triedBefore)
-                  .returns(6, RestaurantItem::rating);
+    private static void assertTriedRestaurantInitial(ObjectAssert<RestaurantData> restaurant) {
+        restaurant.returns(TRIED_RESTAURANT_NAME, RestaurantData::name)
+                  .returns(Set.of(FAST_FOOD, SANDWICH), RestaurantData::categories)
+                  .returns(true, RestaurantData::triedBefore)
+                  .returns(6, RestaurantData::rating);
     }
 
     private static void setUpSecurityContext() {

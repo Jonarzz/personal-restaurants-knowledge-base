@@ -13,11 +13,11 @@ import java.util.*;
 import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
 @CacheConfig(cacheNames = CACHE_NAME)
-public class RestaurantRepository extends DynamoDbRepository<RestaurantItem, RestaurantKey> {
+class RestaurantRepository extends DynamoDbRepository<RestaurantItem, RestaurantKey> {
 
     private static final String TABLE_NAME = "Restaurant";
 
-    public RestaurantRepository(DynamoDbClient client) {
+    RestaurantRepository(DynamoDbClient client) {
         super(TABLE_NAME, new RestaurantItemMapper(), client);
     }
 
