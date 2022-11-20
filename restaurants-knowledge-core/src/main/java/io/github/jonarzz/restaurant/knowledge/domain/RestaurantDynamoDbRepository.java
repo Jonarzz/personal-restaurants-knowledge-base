@@ -1,10 +1,8 @@
 package io.github.jonarzz.restaurant.knowledge.domain;
 
-import static io.github.jonarzz.restaurant.knowledge.domain.RestaurantService.*;
 import static software.amazon.awssdk.services.dynamodb.model.KeyType.*;
 import static software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType.*;
 
-import org.springframework.cache.annotation.*;
 import software.amazon.awssdk.services.dynamodb.*;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
@@ -12,41 +10,35 @@ import java.util.*;
 
 import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 
-@CacheConfig(cacheNames = CACHE_NAME)
-class RestaurantRepository extends DynamoDbRepository<RestaurantItem, RestaurantKey> {
+class RestaurantDynamoDbRepository extends DynamoDbRepository<RestaurantItem, RestaurantKey> {
 
     private static final String TABLE_NAME = "Restaurant";
 
-    RestaurantRepository(DynamoDbClient client) {
+    RestaurantDynamoDbRepository(DynamoDbClient client) {
         super(TABLE_NAME, new RestaurantItemMapper(), client);
     }
 
     @Override
-    @Cacheable
     public Optional<RestaurantItem> findByKey(RestaurantKey key) {
         return super.findByKey(key);
     }
 
     @Override
-    @CacheEvict(key = "#a0.getKey()")
     public void create(RestaurantItem item) {
         super.create(item);
     }
 
     @Override
-    @CacheEvict(key = "#a0.getKey()")
     public void update(RestaurantItem item, Map<String, AttributeValueUpdate> updates) {
         super.update(item, updates);
     }
 
     @Override
-    @CacheEvict(key = "#a0.getKey()")
     public void update(RestaurantItem item, AttributesCreator attributesCreator) {
         super.update(item, attributesCreator);
     }
 
     @Override
-    @CacheEvict(key = "#a0.getKey()")
     public void delete(RestaurantItem item) {
         super.delete(item);
     }

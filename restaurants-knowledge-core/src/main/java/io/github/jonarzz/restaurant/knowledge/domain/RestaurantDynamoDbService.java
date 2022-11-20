@@ -20,9 +20,9 @@ import io.github.jonarzz.restaurant.knowledge.common.*;
 @Slf4j
 class RestaurantDynamoDbService implements RestaurantService {
 
-    private RestaurantRepository repository;
+    private RestaurantDynamoDbRepository repository;
 
-    RestaurantDynamoDbService(RestaurantRepository repository) {
+    RestaurantDynamoDbService(RestaurantDynamoDbRepository repository) {
         this.repository = repository;
     }
 

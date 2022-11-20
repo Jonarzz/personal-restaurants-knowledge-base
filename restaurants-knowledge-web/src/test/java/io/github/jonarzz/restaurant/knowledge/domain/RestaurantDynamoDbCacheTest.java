@@ -10,9 +10,10 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import org.assertj.core.api.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.MethodOrderer.*;
+import org.mockito.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.boot.test.context.*;
-import org.springframework.boot.test.mock.mockito.*;
+import org.springframework.context.annotation.*;
 import org.springframework.test.context.*;
 import org.testcontainers.containers.*;
 import org.testcontainers.junit.jupiter.Container;
@@ -29,7 +30,7 @@ import io.github.jonarzz.restaurant.knowledge.technical.dynamodb.*;
 @SpringBootTest(
         webEnvironment = NONE,
         classes = {
-                DynamoDbClientFactory.class, ApiConfig.class, CacheConfig.class
+                RestaurantConfig.class, CacheConfig.class, RestaurantDynamoDbCacheTest.Config.class
         }
 )
 @TestPropertySource(properties = {
@@ -53,23 +54,41 @@ class RestaurantDynamoDbCacheTest {
         dynamoDbContainer.start();
     }
 
+    static DynamoDbRepository<RestaurantItem, RestaurantKey> repositorySpy;
+
     @DynamicPropertySource
     static void dynamicProperties(DynamicPropertyRegistry registry) {
         registry.add("amazon.aws.dynamodb-url",
                      () -> "http://localhost:" + dynamoDbContainer.getFirstMappedPort());
     }
 
+    @TestConfiguration
+    static class Config {
+
+        @Bean
+        @Primary
+        @SuppressWarnings("unchecked")
+        RestaurantDomainFactory restaurantDomainDynamoDbFactory(DynamoDbClient dynamoDbClient) {
+            var factory = spy(new RestaurantDomainFactory(dynamoDbClient));
+            when(factory.restaurantDynamoDbRepository())
+                    .thenAnswer(invocation -> {
+                        var repository = (DynamoDbRepository<RestaurantItem, RestaurantKey>) invocation.callRealMethod();
+                        return repositorySpy = spy(repository);
+                    });
+            return factory;
+        }
+
+    }
+
     @Autowired
     DynamoDbClient amazonDynamoDb;
-    @SpyBean
-    DynamoDbRepository<RestaurantItem, RestaurantKey> repositorySpy;
-
     @Autowired
     RestaurantService restaurantService;
 
     @BeforeEach
     void setUp() {
         setUpSecurityContext();
+        Mockito.clearInvocations(repositorySpy);
     }
 
     @AfterAll

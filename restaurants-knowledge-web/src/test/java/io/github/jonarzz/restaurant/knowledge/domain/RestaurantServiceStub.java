@@ -8,8 +8,8 @@ import java.util.*;
 
 class RestaurantServiceStub {
 
-    private static final RestaurantRepository REPOSITORY = mock(RestaurantRepository.class);
-    private static final RestaurantDomainFactory FACTORY = new RestaurantDomainFactory();
+    private static final RestaurantDynamoDbRepository REPOSITORY = mock(RestaurantDynamoDbRepository.class);
+    private static final RestaurantDomainFactory FACTORY = new RestaurantDomainFactory(null);
     static final RestaurantService INSTANCE = spy(FACTORY.restaurantDynamoDbService(REPOSITORY));
 
     static final RestaurantItem KFC_CITY_CENTRE = RestaurantItem.builder()

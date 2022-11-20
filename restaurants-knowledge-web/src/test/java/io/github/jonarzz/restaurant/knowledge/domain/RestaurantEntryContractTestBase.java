@@ -25,7 +25,7 @@ class RestaurantEntryContractTestBase {
     static class Config {
 
         @Bean
-        RestaurantService responseProvider() {
+        RestaurantService restaurantService() {
             return RestaurantServiceStub.INSTANCE;
         }
 

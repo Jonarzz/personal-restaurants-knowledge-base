@@ -6,8 +6,6 @@ import io.github.jonarzz.restaurant.knowledge.common.*;
 
 public interface RestaurantService {
 
-    String CACHE_NAME = "RestaurantCache";
-
     Optional<RestaurantData> fetch(String restaurantName);
 
     List<RestaurantData> query(RestaurantQueryCriteria criteria);

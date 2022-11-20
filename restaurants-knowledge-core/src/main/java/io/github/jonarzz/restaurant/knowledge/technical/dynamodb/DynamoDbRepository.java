@@ -6,11 +6,12 @@ import lombok.extern.slf4j.*;
 import software.amazon.awssdk.services.dynamodb.*;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
-import javax.annotation.*;
 import java.util.*;
 
 @Slf4j
 public abstract class DynamoDbRepository<T extends DynamoDbTable<K>, K extends DynamoDbKey> {
+
+    public static boolean createTablesOnInstantiation = false;
 
     private String tableName;
     private ItemMapper<T> itemMapper;
@@ -20,6 +21,9 @@ public abstract class DynamoDbRepository<T extends DynamoDbTable<K>, K extends D
         this.tableName = tableName;
         this.itemMapper = itemMapper;
         this.client = client;
+        if (createTablesOnInstantiation) {
+            createTable();
+        }
     }
 
     public Optional<T> findByKey(K key) {
@@ -88,12 +92,12 @@ public abstract class DynamoDbRepository<T extends DynamoDbTable<K>, K extends D
 
     protected abstract CreateTableRequest prepareCreateTableRequest();
 
-    @PostConstruct
-    void createTable() {
+    private void createTable() {
         try {
             client.createTable(prepareCreateTableRequest());
         } catch (ResourceInUseException exception) {
             log.info("Tried to create table {}, but it already exists", tableName);
         }
     }
+
 }

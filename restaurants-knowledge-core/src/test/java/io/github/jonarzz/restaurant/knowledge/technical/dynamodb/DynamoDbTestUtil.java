@@ -7,16 +7,12 @@ public class DynamoDbTestUtil {
     private DynamoDbTestUtil() {
     }
 
+    public static void enableTableCreation() {
+        DynamoDbRepository.createTablesOnInstantiation = true;
+    }
+
     public static DynamoDbClient createClient(String dynamoDbUrl) {
         var clientFactory = new DynamoDbClientFactory();
-        var credentialsProvider = clientFactory.awsCredentialsProvider(
-                clientFactory.awsCredentials("testaccess", "testsecret")
-        );
-        return clientFactory.amazonDynamoDb(credentialsProvider, dynamoDbUrl);
+        return clientFactory.amazonDynamoDb("testaccess", "testsecret", dynamoDbUrl);
     }
-
-    public static void createTableFor(DynamoDbRepository<?, ?> repository) {
-        repository.createTable();
-    }
-
 }

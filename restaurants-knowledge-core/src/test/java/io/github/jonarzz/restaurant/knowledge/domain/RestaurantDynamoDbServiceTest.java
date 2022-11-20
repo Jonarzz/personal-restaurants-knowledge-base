@@ -43,7 +43,7 @@ class RestaurantDynamoDbServiceTest {
         dynamoDbContainer.start();
     }
 
-    RestaurantRepository repositorySpy;
+    RestaurantDynamoDbRepository repositorySpy;
     RestaurantService restaurantService;
 
     @BeforeAll
@@ -51,9 +51,9 @@ class RestaurantDynamoDbServiceTest {
         var amazonDynamoDb = DynamoDbTestUtil.createClient(
                 "http://localhost:" + dynamoDbContainer.getFirstMappedPort()
         );
-        repositorySpy = spy(new RestaurantRepository(amazonDynamoDb));
+        DynamoDbTestUtil.enableTableCreation();
+        repositorySpy = spy(new RestaurantDynamoDbRepository(amazonDynamoDb));
         restaurantService = new RestaurantDynamoDbService(repositorySpy);
-        DynamoDbTestUtil.createTableFor(repositorySpy);
     }
 
     @BeforeEach

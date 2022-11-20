@@ -5,17 +5,15 @@ import org.springframework.cache.annotation.*;
 import org.springframework.cache.concurrent.*;
 import org.springframework.context.annotation.*;
 
-import io.github.jonarzz.restaurant.knowledge.domain.*;
-
 @Configuration
 @EnableCaching
 public class CacheConfig {
 
+    static final String RESTAURANT_CACHE_NAME = "RestaurantCache";
+
     @Bean
     CacheManager cacheManager() {
-        return new ConcurrentMapCacheManager(
-                RestaurantService.CACHE_NAME
-        );
+        return new ConcurrentMapCacheManager(RESTAURANT_CACHE_NAME);
     }
 
 }

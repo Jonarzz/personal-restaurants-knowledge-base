@@ -1,19 +1,19 @@
 package io.github.jonarzz.restaurant.knowledge.domain;
 
-import org.springframework.context.annotation.*;
+import lombok.*;
 import software.amazon.awssdk.services.dynamodb.*;
 
-@Configuration
+@RequiredArgsConstructor
 public class RestaurantDomainFactory {
 
-    @Bean
-    public RestaurantService restaurantDynamoDbService(RestaurantRepository restaurantRepository) {
+    private final DynamoDbClient dynamoDbClient;
+
+    public RestaurantService restaurantDynamoDbService(RestaurantDynamoDbRepository restaurantRepository) {
         return new RestaurantDynamoDbService(restaurantRepository);
     }
 
-    @Bean
-    RestaurantRepository restaurantRepository(DynamoDbClient dynamoDbClient) {
-        return new RestaurantRepository(dynamoDbClient);
+    public RestaurantDynamoDbRepository restaurantDynamoDbRepository() {
+        return new RestaurantDynamoDbRepository(dynamoDbClient);
     }
 
 }

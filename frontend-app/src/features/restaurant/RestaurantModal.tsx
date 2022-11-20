@@ -38,6 +38,10 @@ const handleApiError = (error: any) => {
 
 export const RestaurantModal = ({restaurantData, onClose, onSaveSuccess}: Props) => {
 
+  // TODO restaurant deletion
+  // TODO share restaurant data (copy to clipboard)
+  // TODO link to Google Maps
+
   const [name, setName] = useState(restaurantData.name);
   const [categories, setCategories] = useState(categoriesAsStrings(restaurantData.categories));
   const [triedBefore, setTriedBefore] = useState(restaurantData.triedBefore);
