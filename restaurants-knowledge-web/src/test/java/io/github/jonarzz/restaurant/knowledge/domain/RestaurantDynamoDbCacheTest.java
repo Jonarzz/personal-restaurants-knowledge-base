@@ -10,6 +10,8 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import org.assertj.core.api.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.MethodOrderer.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 import org.mockito.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.boot.test.context.*;
@@ -86,8 +88,9 @@ class RestaurantDynamoDbCacheTest {
     RestaurantService restaurantService;
 
     @BeforeEach
+    @SuppressWarnings("unchecked")
     void setUp() {
-        setUpSecurityContext();
+        setUpSecurityContext(TEST_USER);
         Mockito.clearInvocations(repositorySpy);
     }
 
@@ -146,10 +149,7 @@ class RestaurantDynamoDbCacheTest {
 
     @RepeatedTest(5)
     @Order(25)
-    @SuppressWarnings("unchecked")
     void findNotTriedByUserIdAndName_cacheShouldBeUsed() {
-        clearInvocations(repositorySpy);
-
         assertRestaurantFound(NOT_TRIED_RESTAURANT_NAME);
 
         verifyNoInteractions(repositorySpy);
@@ -157,19 +157,32 @@ class RestaurantDynamoDbCacheTest {
 
     @RepeatedTest(5)
     @Order(25)
-    @SuppressWarnings("unchecked")
     void findTriedByUserIdAndName_cacheShouldBeUsed() {
-        clearInvocations(repositorySpy);
-
         assertRestaurantFound(TRIED_RESTAURANT_NAME);
 
         verifyNoInteractions(repositorySpy);
     }
 
+    @Order(25)
+    @ParameterizedTest(name = "restaurant name = {0}")
+    @ValueSource(strings = {TRIED_RESTAURANT_NAME, NOT_TRIED_RESTAURANT_NAME})
+    void findForOtherUser_cacheShouldNotBeUsed(String restaurantName) {
+        setUpSecurityContext("some other user");
+
+        optionalRestaurantWithName(restaurantName)
+                .isEmpty();
+        verify(repositorySpy)
+                .findByKey(any());
+    }
+
     private ObjectAssert<RestaurantData> assertRestaurantFound(String restaurantName) {
-        return assertThat(restaurantService.fetch(restaurantName))
-                .as("Restaurant with name: " + restaurantName)
+        return optionalRestaurantWithName(restaurantName)
                 .get(type(RestaurantData.class));
+    }
+
+    private OptionalAssert<RestaurantData> optionalRestaurantWithName(String restaurantName) {
+        return assertThat(restaurantService.fetch(restaurantName))
+                .as("Restaurant with name: " + restaurantName);
     }
 
     private static void assertNotTriedRestaurantInitial(ObjectAssert<RestaurantData> restaurant) {
@@ -188,7 +201,7 @@ class RestaurantDynamoDbCacheTest {
                   .returns(6, RestaurantData::rating);
     }
 
-    private static void setUpSecurityContext() {
-        SecurityContext.setUserId(TEST_USER);
+    private static void setUpSecurityContext(String userId) {
+        SecurityContext.setUserId(userId);
     }
 }

@@ -47,7 +47,7 @@ export const RestaurantSearchPage = () => {
       </Card>
       {modalRestaurant && <RestaurantModal restaurantData={modalRestaurant}
                                            onClose={() => setModalRestaurant(undefined)}
-                                           onSaveSuccess={() => {
+                                           onChangeSuccess={() => {
                                              setRestaurants(undefined);
                                              setFormResetCounter(current => ++current);
                                            }}/>}

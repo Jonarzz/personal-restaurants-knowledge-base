@@ -1,13 +1,14 @@
-import {Form, Input, Modal, notification, Select, Switch} from 'antd';
+import {Button, Form, Input, Modal, notification, Popconfirm, Select, Switch} from 'antd';
 import React, {useEffect, useState} from 'react';
 import {Category, RestaurantData} from '../../api';
 import {restaurantEntryApi, restaurantsApi} from '../../api/ApiFacade';
 import {CATEGORY_SELECT_OPTIONS, RATING_SELECT_OPTIONS} from './common';
+import './RestaurantModal.css';
 
 type Props = {
   restaurantData: RestaurantData,
   onClose: Function,
-  onSaveSuccess: Function
+  onChangeSuccess: Function
 };
 
 export type FormData = Omit<RestaurantData, 'notes'> & { notes?: string };
@@ -36,7 +37,7 @@ const handleApiError = (error: any) => {
   });
 };
 
-export const RestaurantModal = ({restaurantData, onClose, onSaveSuccess}: Props) => {
+export const RestaurantModal = ({restaurantData, onClose, onChangeSuccess}: Props) => {
 
   // TODO restaurant deletion
   // TODO share restaurant data (copy to clipboard)
@@ -67,7 +68,7 @@ export const RestaurantModal = ({restaurantData, onClose, onSaveSuccess}: Props)
     restaurantsApi.createRestaurant(formToRestaurantData(formData))
                   .then(() => {
                     onClose();
-                    onSaveSuccess();
+                    onChangeSuccess();
                     openRestaurantSavedNotification('Restaurant created');
                   })
                   .catch(handleApiError)
@@ -79,8 +80,25 @@ export const RestaurantModal = ({restaurantData, onClose, onSaveSuccess}: Props)
     restaurantEntryApi.updateRestaurant(restaurantName, formToRestaurantData(formData))
                       .then(() => {
                         onClose();
-                        onSaveSuccess();
+                        onChangeSuccess();
                         openRestaurantSavedNotification('Restaurant updated');
+                      })
+                      .catch(handleApiError)
+                      .finally(() => setLoading(false));
+  };
+
+  const deleteRestaurant = () => {
+    // TODO component and e2e test
+    const restaurantName = restaurantData.name;
+    if (!restaurantName) {
+      return;
+    }
+    setLoading(true);
+    restaurantEntryApi.deleteRestaurant(restaurantName)
+                      .then(() => {
+                        onClose();
+                        onChangeSuccess();
+                        openRestaurantSavedNotification('Restaurant deleted');
                       })
                       .catch(handleApiError)
                       .finally(() => setLoading(false));
@@ -99,18 +117,31 @@ export const RestaurantModal = ({restaurantData, onClose, onSaveSuccess}: Props)
     }
   };
 
-  // TODO restaurant deletion
+  const footer = [
+    <Button onClick={() => onClose()}>
+      Cancel
+    </Button>,
+    <Popconfirm title="Are you sure?"
+                disabled={!restaurantData.name}
+                onConfirm={deleteRestaurant}>
+      <Button danger
+              disabled={!restaurantData.name}
+              loading={loading}>
+        Delete
+      </Button>
+    </Popconfirm>,
+    <Button type="primary"
+            disabled={!name || !categories?.length}
+            loading={loading}
+            onClick={() => modalForm.submit()}>
+      {restaurantData.name ? 'Update' : 'Create'}
+    </Button>
+  ];
 
   return (
     <Modal open
            title={restaurantData.name || 'New restaurant'}
-           okText={restaurantData.name ? 'Update' : 'Create'}
-           okButtonProps={{
-             loading,
-             disabled: !name || !categories?.length,
-           }}
-           onOk={() => modalForm.submit()}
-           onCancel={() => onClose()}>
+           footer={footer}>
 
       <Form form={modalForm}
             onFinish={submitForm}

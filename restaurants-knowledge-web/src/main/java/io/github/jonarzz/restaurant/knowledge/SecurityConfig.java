@@ -33,6 +33,7 @@ class SecurityConfig {
             var corsConfig = new CorsConfiguration()
                     .applyPermitDefaultValues();
             corsConfig.addAllowedMethod(PUT);
+            corsConfig.addAllowedMethod(DELETE);
             return corsConfig;
         };
     }
